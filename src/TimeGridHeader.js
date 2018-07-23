@@ -4,12 +4,9 @@ import scrollbarSize from 'dom-helpers/util/scrollbarSize'
 import React from 'react'
 
 import dates from './utils/dates'
-import { elementType, accessor, dateFormat } from './utils/propTypes'
-import localizer from './localizer'
 import DateContentRow from './DateContentRow'
 import Header from './Header'
 import { notify } from './utils/helpers'
-import { accessor as get } from './utils/accessors'
 
 class TimeGridHeader extends React.Component {
   static propTypes = {
@@ -19,14 +16,10 @@ class TimeGridHeader extends React.Component {
     getNow: PropTypes.func.isRequired,
     isOverflowing: PropTypes.bool,
 
-    dayFormat: dateFormat,
-    eventPropGetter: PropTypes.func,
-    dayPropGetter: PropTypes.func,
-    culture: PropTypes.string,
-
     rtl: PropTypes.bool,
     width: PropTypes.number,
 
+    localizer: PropTypes.object.isRequired,
     accessors: PropTypes.object.isRequired,
     components: PropTypes.object.isRequired,
     getters: PropTypes.object.isRequired,
@@ -70,11 +63,10 @@ class TimeGridHeader extends React.Component {
 
   renderHeaderCells(range) {
     let {
-      dayFormat,
-      culture,
-      dayPropGetter,
+      localizer,
       getDrilldownView,
       getNow,
+      getters: { dayProp },
       components: { header: HeaderComponent = Header },
     } = this.props
 
@@ -82,18 +74,12 @@ class TimeGridHeader extends React.Component {
 
     return range.map((date, i) => {
       let drilldownView = getDrilldownView(date)
-      let label = localizer.format(date, dayFormat, culture)
+      let label = localizer.format(date, 'dayFormat')
 
-      const { className, style } = (dayPropGetter && dayPropGetter(date)) || {}
+      const { className, style } = dayProp(date)
 
       let header = (
-        <HeaderComponent
-          date={date}
-          label={label}
-          localizer={localizer}
-          format={dayFormat}
-          culture={culture}
-        />
+        <HeaderComponent date={date} label={label} localizer={localizer} />
       )
 
       return (
@@ -128,6 +114,7 @@ class TimeGridHeader extends React.Component {
       getNow,
       range,
       getters,
+      localizer,
       accessors,
       components,
     } = this.props
@@ -152,6 +139,7 @@ class TimeGridHeader extends React.Component {
         components={components}
         accessors={accessors}
         getters={getters}
+        localizer={localizer}
         onSelect={this.props.onSelectEvent}
         onDoubleClick={this.props.onDoubleClickEvent}
         onSelectSlot={this.props.onSelectSlot}

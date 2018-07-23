@@ -4,7 +4,6 @@ import { findDOMNode } from 'react-dom'
 import cn from 'classnames'
 
 import dates from './utils/dates'
-import localizer from './localizer'
 import chunk from 'lodash/chunk'
 
 import { navigate, views } from './utils/constants'
@@ -18,7 +17,6 @@ import DateContentRow from './DateContentRow'
 import Header from './Header'
 import DateHeader from './DateHeader'
 
-import { dateFormat } from './utils/propTypes'
 import { inRange, sortEvents } from './utils/eventLevels'
 
 let eventsForWeek = (evts, start, end, props) =>
@@ -35,22 +33,13 @@ let propTypes = {
   getNow: PropTypes.func.isRequired,
 
   scrollToTime: PropTypes.instanceOf(Date),
-  eventPropGetter: PropTypes.func,
-  dayPropGetter: PropTypes.func,
-
-  culture: PropTypes.string,
-  dayFormat: dateFormat,
-
   rtl: PropTypes.bool,
   width: PropTypes.number,
 
   accessors: PropTypes.object.isRequired,
   components: PropTypes.object.isRequired,
   getters: PropTypes.object.isRequired,
-  formats: PropTypes.shape({
-    dateFormat,
-    weekdayFormat: dateFormat,
-  }).isRequired,
+  localizer: PropTypes.object.isRequired,
 
   selected: PropTypes.object,
   selectable: PropTypes.oneOf([true, false, 'ignoreEvents']),
@@ -66,7 +55,6 @@ let propTypes = {
 
   popup: PropTypes.bool,
 
-  messages: PropTypes.object,
   popupOffset: PropTypes.oneOfType([
     PropTypes.number,
     PropTypes.shape({
@@ -129,8 +117,8 @@ class MonthView extends React.Component {
   }
 
   render() {
-    let { date, culture, formats, className } = this.props,
-      month = dates.visibleDays(date, culture),
+    let { date, localizer, className } = this.props,
+      month = dates.visibleDays(date, localizer),
       weeks = chunk(month, 7)
 
     this._weekCount = weeks.length
@@ -138,7 +126,7 @@ class MonthView extends React.Component {
     return (
       <div className={cn('rbc-month-view', className)}>
         <div className="rbc-row rbc-month-header">
-          {this.renderHeaders(weeks[0], formats.weekdayFormat, culture)}
+          {this.renderHeaders(weeks[0])}
         </div>
         {weeks.map(this.renderWeek)}
         {this.props.popup && this.renderOverlay()}
@@ -152,9 +140,9 @@ class MonthView extends React.Component {
       components,
       selectable,
       getNow,
-      messages,
       selected,
       date,
+      localizer,
       longPressThreshold,
       accessors,
       getters,
@@ -178,10 +166,10 @@ class MonthView extends React.Component {
         maxRows={rowLimit}
         selected={selected}
         selectable={selectable}
-        messages={messages}
         components={components}
         accessors={accessors}
         getters={getters}
+        localizer={localizer}
         renderHeader={this.readerDateHeading}
         renderForMeasure={needLimitMeasure}
         onShowMore={this.handleShowMore}
@@ -194,12 +182,12 @@ class MonthView extends React.Component {
   }
 
   readerDateHeading = ({ date, className, ...props }) => {
-    let { date: currentDate, getDrilldownView, formats, culture } = this.props
+    let { date: currentDate, getDrilldownView, localizer } = this.props
 
     let isOffRange = dates.month(date) !== dates.month(currentDate)
     let isCurrent = dates.eq(date, currentDate, 'day')
     let drilldownView = getDrilldownView(date)
-    let label = localizer.format(date, formats.dateFormat, culture)
+    let label = localizer.format(date, 'dateFormat')
     let DateHeaderComponent = this.props.components.dateHeader || DateHeader
 
     return (
@@ -222,19 +210,18 @@ class MonthView extends React.Component {
     )
   }
 
-  renderHeaders(row, format, culture) {
+  renderHeaders(row) {
+    let { localizer, components } = this.props
     let first = row[0]
     let last = row[row.length - 1]
-    let HeaderComponent = this.props.components.header || Header
+    let HeaderComponent = components.header || Header
 
     return dates.range(first, last, 'day').map((day, idx) => (
       <div key={'header_' + idx} className="rbc-header">
         <HeaderComponent
           date={day}
-          label={localizer.format(day, format, culture)}
           localizer={localizer}
-          format={format}
-          culture={culture}
+          label={localizer.format(day, 'weekdayFormat')}
         />
       </div>
     ))
@@ -242,15 +229,7 @@ class MonthView extends React.Component {
 
   renderOverlay() {
     let overlay = (this.state && this.state.overlay) || {}
-    let {
-      accessors,
-      formats,
-      messages,
-      components,
-      getters,
-      selected,
-      culture,
-    } = this.props
+    let { accessors, localizer, components, getters, selected } = this.props
 
     return (
       <Overlay
@@ -261,13 +240,11 @@ class MonthView extends React.Component {
         onHide={() => this.setState({ overlay: null })}
       >
         <Popup
-          culture={culture}
-          formats={formats}
-          messages={messages}
           accessors={accessors}
           getters={getters}
           selected={selected}
           components={components}
+          localizer={localizer}
           position={overlay.position}
           events={overlay.events}
           slotStart={overlay.date}
@@ -367,7 +344,7 @@ MonthView.navigate = (date, action) => {
   }
 }
 
-MonthView.title = (date, { formats, culture }) =>
-  localizer.format(date, formats.monthHeaderFormat, culture)
+MonthView.title = (date, { localizer }) =>
+  localizer.format(date, 'monthHeaderFormat')
 
 export default MonthView

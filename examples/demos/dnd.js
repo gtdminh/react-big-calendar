@@ -77,6 +77,7 @@ class Dnd extends React.Component {
     return (
       <DragAndDropCalendar
         selectable
+        localizer={this.props.localizer}
         events={this.state.events}
         onEventDrop={this.moveEvent}
         resizable

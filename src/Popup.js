@@ -7,8 +7,6 @@ import dates from './utils/dates'
 
 import EventCell from './EventCell'
 import { isSelected } from './utils/selection'
-import localizer from './localizer'
-import { elementType, dateFormat } from './utils/propTypes'
 
 const propTypes = {
   position: PropTypes.object,
@@ -21,9 +19,15 @@ const propTypes = {
   ]),
   events: PropTypes.array,
   selected: PropTypes.object,
-  eventComponent: elementType,
-  eventWrapperComponent: elementType,
-  dayHeaderFormat: dateFormat,
+
+  accessors: PropTypes.object.isRequired,
+  components: PropTypes.object.isRequired,
+  getters: PropTypes.object.isRequired,
+  localizer: PropTypes.object.isRequired,
+  onSelect: PropTypes.func,
+  onDoubleClick: PropTypes.func,
+  slotStart: PropTypes.number,
+  slotEnd: PropTypes.number,
 }
 
 class Popup extends React.Component {
@@ -58,8 +62,7 @@ class Popup extends React.Component {
       onDoubleClick,
       slotStart,
       slotEnd,
-      culture,
-      formats,
+      localizer,
     } = this.props
 
     let { left, width, top } = this.props.position,
@@ -75,7 +78,7 @@ class Popup extends React.Component {
     return (
       <div ref="root" style={style} className="rbc-overlay">
         <div className="rbc-overlay-header">
-          {localizer.format(slotStart, formats.dayHeaderFormat, culture)}
+          {localizer.format(slotStart, 'dayHeaderFormat')}
         </div>
         {events.map((event, idx) => (
           <EventCell

@@ -17,6 +17,7 @@ const propTypes = {
   range: PropTypes.array.isRequired,
 
   rtl: PropTypes.bool,
+  resourceId: PropTypes.any,
   renderForMeasure: PropTypes.bool,
   renderHeader: PropTypes.func,
 
@@ -27,8 +28,10 @@ const propTypes = {
 
   onShowMore: PropTypes.func,
   onSelectSlot: PropTypes.func,
+  onSelect: PropTypes.func,
   onSelectEnd: PropTypes.func,
   onSelectStart: PropTypes.func,
+  onDoubleClick: PropTypes.func,
   dayPropGetter: PropTypes.func,
 
   getNow: PropTypes.func.isRequired,
@@ -36,7 +39,7 @@ const propTypes = {
   accessors: PropTypes.object.isRequired,
   components: PropTypes.object.isRequired,
   getters: PropTypes.object.isRequired,
-  formats: PropTypes.object.isRequired,
+  localizer: PropTypes.object.isRequired,
 
   minRows: PropTypes.number.isRequired,
   maxRows: PropTypes.number.isRequired,
@@ -140,16 +143,16 @@ class DateContentRow extends React.Component {
 
       accessors,
       getters,
-      messages,
-      formats,
       components,
 
       getNow,
       renderHeader,
       onSelect,
+      localizer,
       onSelectStart,
       onSelectEnd,
       onDoubleClick,
+      resourceId,
       longPressThreshold,
     } = this.props
 
@@ -164,9 +167,11 @@ class DateContentRow extends React.Component {
       selected,
       accessors,
       getters,
+      localizer,
       components,
       onSelect,
       onDoubleClick,
+      resourceId,
       slotMetrics: metrics,
     }
 
@@ -201,7 +206,6 @@ class DateContentRow extends React.Component {
               <EventEndingRow
                 segments={extra}
                 onShowMore={this.handleShowMore}
-                messages={messages}
                 {...eventRowProps}
               />
             )}

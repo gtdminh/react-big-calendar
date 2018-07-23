@@ -12,7 +12,6 @@ class EventEndingRow extends React.Component {
   static propTypes = {
     segments: PropTypes.array,
     slots: PropTypes.number,
-    messages: PropTypes.object,
     onShowMore: PropTypes.func,
     ...EventRowMixin.propTypes,
   }
@@ -82,7 +81,7 @@ class EventEndingRow extends React.Component {
   }
 
   renderShowMore(segments, slot) {
-    let messages = this.props.messages
+    let { localizer } = this.props
     let count = eventsInSlot(segments, slot)
 
     return count ? (
@@ -92,7 +91,7 @@ class EventEndingRow extends React.Component {
         className={'rbc-show-more'}
         onClick={e => this.showMore(slot, e)}
       >
-        {messages.showMore(count)}
+        {localizer.messages.showMore(count)}
       </a>
     ) : (
       false

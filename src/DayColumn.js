@@ -7,10 +7,8 @@ import Selection, { getBoundsForNode, isEvent } from './Selection'
 import dates from './utils/dates'
 import * as TimeSlotUtils from './utils/TimeSlots'
 import { isSelected } from './utils/selection'
-import localizer from './localizer'
 
 import { notify } from './utils/helpers'
-import { dateFormat } from './utils/propTypes'
 import * as DayEventLayout from './utils/DayEventLayout'
 import TimeSlotGroup from './TimeSlotGroup'
 import TimeGridEvent from './TimeGridEvent'
@@ -26,21 +24,14 @@ class DayColumn extends React.Component {
 
     rtl: PropTypes.bool,
 
-    selectRangeFormat: dateFormat,
-
     accessors: PropTypes.object.isRequired,
     components: PropTypes.object.isRequired,
     getters: PropTypes.object.isRequired,
-    formats: PropTypes.shape({
-      eventTimeRangeFormat: dateFormat,
-      eventTimeRangeStartFormat: dateFormat,
-      eventTimeRangeEndFormat: dateFormat,
-    }).isRequired,
+    localizer: PropTypes.object.isRequired,
 
     showMultiDayTimes: PropTypes.bool,
     culture: PropTypes.string,
     timeslots: PropTypes.number,
-    messages: PropTypes.object,
 
     selected: PropTypes.object,
     selectable: PropTypes.oneOf([true, false, 'ignoreEvents']),
@@ -92,11 +83,9 @@ class DayColumn extends React.Component {
       rtl,
       date,
       getNow,
-      formats,
-      culture,
       resource,
       accessors,
-      messages,
+      localizer,
       getters: { dayProp, ...getters },
       components: { eventContainerWrapper: EventContainer, ...components },
     } = this.props
@@ -130,15 +119,12 @@ class DayColumn extends React.Component {
           />
         ))}
         <EventContainer
-          formats={formats}
-          culture={culture}
-          messages={messages}
+          localizer={localizer}
           resource={resource}
           accessors={accessors}
           getters={getters}
           components={components}
           slotMetrics={slotMetrics}
-          localizer={localizer}
         >
           <div className={cn('rbc-events-container', rtl && 'rtl')}>
             {this.renderEvents()}
@@ -147,13 +133,7 @@ class DayColumn extends React.Component {
 
         {selecting && (
           <div className="rbc-slot-selection" style={{ top, height }}>
-            <span>
-              {localizer.format(
-                selectDates,
-                formats.selectRangeFormat,
-                culture
-              )}
-            </span>
+            <span>{localizer.format(selectDates, 'selectRangeFormat')}</span>
           </div>
         )}
       </div>
@@ -162,18 +142,17 @@ class DayColumn extends React.Component {
 
   renderEvents = () => {
     let {
-      culture,
       events,
-      messages,
       rtl: isRtl,
       selected,
       accessors,
-      formats,
+      localizer,
       getters,
       components: { eventWrapper: EventWrapper, event: Event },
     } = this.props
 
     const { slotMetrics } = this
+    const { messages } = localizer
 
     let styledEvents = DayEventLayout.getStyledEvents({
       events,
@@ -184,17 +163,17 @@ class DayColumn extends React.Component {
     return styledEvents.map(({ event, style }, idx) => {
       let end = accessors.end(event)
       let start = accessors.start(event)
-      let format = formats.eventTimeRangeFormat
+      let format = 'eventTimeRangeFormat'
       let label
 
       const startsBeforeDay = slotMetrics.startsBeforeDay(start)
       const startsAfterDay = slotMetrics.startsAfterDay(end)
 
-      if (startsBeforeDay) format = formats.eventTimeRangeEndFormat
-      else if (startsAfterDay) format = formats.eventTimeRangeStartFormat
+      if (startsBeforeDay) format = 'eventTimeRangeEndFormat'
+      else if (startsAfterDay) format = 'eventTimeRangeStartFormat'
 
       if (startsBeforeDay && startsAfterDay) label = messages.allDay
-      else label = localizer.format({ start, end }, format, culture)
+      else label = localizer.format({ start, end }, format)
 
       let continuesEarlier = startsBeforeDay || slotMetrics.startsBefore(start)
       let continuesLater = startsAfterDay || slotMetrics.startsAfter(end)
@@ -203,11 +182,9 @@ class DayColumn extends React.Component {
         <EventWrapper
           type="time"
           event={event}
-          formats={formats}
-          culture={culture}
+          localizer={localizer}
           slotMetrics={slotMetrics}
           getters={getters}
-          messages={messages}
           accessors={accessors}
           continuesEarlier={continuesEarlier}
           continuesLater={continuesLater}

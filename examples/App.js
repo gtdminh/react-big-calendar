@@ -7,8 +7,6 @@ import { render } from 'react-dom'
 import localizer from 'react-big-calendar/lib/localizers/globalize'
 import globalize from 'globalize'
 
-localizer(globalize)
-
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'font-awesome/css/font-awesome.min.css'
 
@@ -25,6 +23,8 @@ import Resource from './demos/resource'
 import DndResource from './demos/dndresource'
 import Timeslots from './demos/timeslots'
 import Dnd from './demos/dnd'
+
+const globalizeLocalizer = localizer(globalize)
 
 let demoRoot =
   'https://github.com/intljusticemission/react-big-calendar/tree/master/examples/demos'
@@ -137,7 +137,7 @@ class Example extends React.Component {
                 </strong>
               </a>
             </div>
-            <Current />
+            <Current localizer={globalizeLocalizer} />
           </div>
         </div>
         <div className="docs">

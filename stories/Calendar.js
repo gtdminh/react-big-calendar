@@ -16,7 +16,7 @@ import withDragAndDrop from '../src/addons/dragAndDrop'
 
 // Setup the localizer by providing the moment (or globalize) Object
 // to the correct localizer.
-momentLocalizer(moment) // or globalizeLocalizer
+const localizer = momentLocalizer(moment) // or globalizeLocalizer
 
 const events = [
   {
@@ -95,6 +95,7 @@ const DragableCalendar = props => {
     <DragAndDropCalendar
       popup
       selectable
+      localizer={localizer}
       onEventDrop={action('event dropped')}
       onSelectEvent={action('event selected')}
       onSelectSlot={action('slot selected')}
@@ -110,6 +111,7 @@ storiesOf('module.Calendar.week', module)
         <Calendar
           popup
           events={demoEvents}
+          localizer={localizer}
           onSelectEvent={action('event selected')}
           defaultDate={new Date(2015, 3, 1)}
         />
@@ -124,6 +126,7 @@ storiesOf('module.Calendar.week', module)
           min={moment('12:00am', 'h:mma').toDate()}
           max={moment('11:59pm', 'h:mma').toDate()}
           events={events}
+          localizer={localizer}
           onSelectEvent={action('event selected')}
           defaultDate={new Date()}
         />
@@ -135,6 +138,7 @@ storiesOf('module.Calendar.week', module)
       <div style={{ height: 600 }}>
         <DragableCalendar
           defaultView={Calendar.Views.DAY}
+          localizer={localizer}
           min={moment('12:00am', 'h:mma').toDate()}
           max={moment('11:59pm', 'h:mma').toDate()}
           events={[
@@ -172,6 +176,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 500 }}>
         <DragableCalendar
+          localizer={localizer}
           events={resources.events}
           resources={resources.list}
         />
@@ -182,8 +187,9 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <Calendar
-          defaultView={Calendar.Views.WEEK}
           selectable
+          defaultView={Calendar.Views.WEEK}
+          localizer={localizer}
           min={moment('12:00am', 'h:mma').toDate()}
           max={moment('11:59pm', 'h:mma').toDate()}
           events={events}
@@ -216,8 +222,9 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <Calendar
-          defaultView={Calendar.Views.WEEK}
           selectable
+          localizer={localizer}
+          defaultView={Calendar.Views.WEEK}
           timeslots={6}
           step={10}
           min={moment('12:00am', 'h:mma').toDate()}
@@ -234,8 +241,9 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <Calendar
-          defaultView={Calendar.Views.WEEK}
           selectable
+          localizer={localizer}
+          defaultView={Calendar.Views.WEEK}
           timeslots={6}
           step={5}
           min={moment('12:00am', 'h:mma').toDate()}
@@ -252,6 +260,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <Calendar
+          localizer={localizer}
           defaultView={Calendar.Views.WEEK}
           selectable
           timeslots={3}
@@ -270,6 +279,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <Calendar
+          localizer={localizer}
           defaultDate={new Date(2016, 11, 4)}
           events={[
             {
@@ -287,6 +297,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <Calendar
+          localizer={localizer}
           defaultDate={new Date(2016, 11, 3)}
           events={[
             {
@@ -304,6 +315,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <Calendar
+          localizer={localizer}
           defaultDate={new Date(2016, 11, 3)}
           events={[
             {
@@ -326,6 +338,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <Calendar
+          localizer={localizer}
           defaultDate={new Date(2016, 11, 4)}
           events={[
             {
@@ -360,6 +373,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <Calendar
+          localizer={localizer}
           defaultView={Calendar.Views.MONTH}
           events={events}
           components={{
@@ -377,6 +391,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <Calendar
+          localizer={localizer}
           defaultView={Calendar.Views.MONTH}
           events={events}
           components={{
@@ -390,6 +405,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <Calendar
+          localizer={localizer}
           defaultView={Calendar.Views.DAY}
           events={events}
           components={{
@@ -403,6 +419,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <Calendar
+          localizer={localizer}
           defaultView={Calendar.Views.DAY}
           events={events}
           components={{
@@ -417,6 +434,7 @@ storiesOf('module.Calendar.week', module)
       <div style={{ height: 600 }}>
         {/* should display all three events */}
         <Calendar
+          localizer={localizer}
           defaultDate={new Date(2016, 11, 4)}
           events={[
             {
@@ -443,6 +461,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <Calendar
+          localizer={localizer}
           defaultDate={new Date()}
           defaultView={Calendar.Views.DAY}
           events={createEvents(1)}
@@ -456,6 +475,7 @@ storiesOf('module.Calendar.week', module)
       <div style={{ height: 600 }}>
         {/* should display all three events */}
         <Calendar
+          localizer={localizer}
           showMultiDayTimes
           defaultDate={new Date(2016, 11, 4)}
           max={moment()
@@ -493,6 +513,7 @@ storiesOf('module.Calendar.week', module)
       <div style={{ height: 600 }}>
         {/* should display as title toolbar (from now to now + 14 days) */}
         <Calendar
+          localizer={localizer}
           defaultView={Calendar.Views.AGENDA}
           events={events}
           length={14}
@@ -507,6 +528,7 @@ storiesOf('module.Calendar.week', module)
         <div style={{ height: 600 }}>
           {/* should display all three events */}
           <Calendar
+            localizer={localizer}
             defaultDate={new Date(2015, 3, 1)}
             events={[
               // {
@@ -554,6 +576,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <Calendar
+          localizer={localizer}
           defaultView={Calendar.Views.WEEK}
           getNow={customNow}
           min={moment('12:00am', 'h:mma').toDate()}
@@ -569,6 +592,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <DragAndDropCalendar
+          localizer={localizer}
           defaultDate={new Date()}
           defaultView={Calendar.Views.WEEK}
           events={events}
@@ -583,6 +607,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <DragAndDropCalendar
+          localizer={localizer}
           defaultDate={new Date()}
           defaultView={Calendar.Views.WEEK}
           events={events}
@@ -599,6 +624,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <DragAndDropCalendar
+          localizer={localizer}
           defaultDate={new Date()}
           defaultView={Calendar.Views.WEEK}
           events={events}
@@ -614,6 +640,7 @@ storiesOf('module.Calendar.week', module)
     return (
       <div style={{ height: 600 }}>
         <DragAndDropCalendar
+          localizer={localizer}
           components={{
             dateCellWrapper: customComponents.dateCellWrapper,
           }}
@@ -635,6 +662,7 @@ storiesOf('module.Calendar.week', module)
           components={{
             dayWrapper: customComponents.dayWrapper,
           }}
+          localizer={localizer}
           defaultDate={new Date()}
           defaultView={Calendar.Views.WEEK}
           events={events}
@@ -653,6 +681,7 @@ storiesOf('module.Calendar.week', module)
           components={{
             eventWrapper: customComponents.eventWrapper,
           }}
+          localizer={localizer}
           defaultDate={new Date()}
           defaultView={Calendar.Views.WEEK}
           events={events}
@@ -671,6 +700,7 @@ storiesOf('module.Calendar.week', module)
       <div style={{ height: 600 }}>
         <Calendar
           popup
+          localizer={localizer}
           events={demoEvents}
           onSelectEvent={action('event selected')}
           defaultDate={new Date(2015, 3, 1)}

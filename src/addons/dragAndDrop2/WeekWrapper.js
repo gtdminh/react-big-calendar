@@ -38,9 +38,7 @@ class WeekWrapper extends React.Component {
   }
 
   _selectable = () => {
-    let node = findDOMNode(this).closest(
-      '.rbc-month-row, .rbc-time-header-content'
-    )
+    let node = findDOMNode(this).closest('.rbc-month-row, .rbc-allday-cell')
     let container = node.closest('.rbc-month-view, .rbc-time-view')
 
     let selector = (this._selector = new Selection(() => container))
@@ -101,7 +99,7 @@ class WeekWrapper extends React.Component {
   }
 
   handleEventDrop = ({ segment: { event } }) => {
-    const { resource } = this.props
+    const { resourceId } = this.props
     const { movingEvent, onMove, onEventDrop } = this.context
 
     this.setState({ selecting: false })
@@ -112,7 +110,7 @@ class WeekWrapper extends React.Component {
       event: movingEvent,
       start: event.start,
       end: event.end,
-      resourceId: resource,
+      resourceId,
       isAllDay: true,
     })
   }

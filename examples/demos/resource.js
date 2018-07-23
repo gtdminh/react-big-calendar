@@ -41,9 +41,10 @@ const resourceMap = [
   { resourceId: 4, resourceTitle: 'Meeting room 2' },
 ]
 
-let Resource = () => (
+let Resource = ({ localizer }) => (
   <BigCalendar
     events={events}
+    localizer={localizer}
     defaultView={BigCalendar.Views.DAY}
     views={['day', 'work_week']}
     step={60}

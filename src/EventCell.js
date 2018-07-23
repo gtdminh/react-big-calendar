@@ -10,10 +10,13 @@ let propTypes = {
 
   selected: PropTypes.bool,
   isAllDay: PropTypes.bool,
+  continuesPrior: PropTypes.bool,
+  continuesAfter: PropTypes.bool,
 
   accessors: PropTypes.object.isRequired,
   components: PropTypes.object.isRequired,
   getters: PropTypes.object.isRequired,
+  localizer: PropTypes.object.isRequired,
 
   onSelect: PropTypes.func,
   onDoubleClick: PropTypes.func,
@@ -29,6 +32,7 @@ class EventCell extends React.Component {
       isAllDay,
       onSelect,
       onDoubleClick,
+      localizer,
       continuesPrior,
       continuesAfter,
       accessors,
@@ -71,7 +75,12 @@ class EventCell extends React.Component {
         >
           <div className="rbc-event-content" title={tooltip || undefined}>
             {Event ? (
-              <Event event={event} title={title} isAllDay={allDay} />
+              <Event
+                event={event}
+                title={title}
+                isAllDay={allDay}
+                localizer={localizer}
+              />
             ) : (
               title
             )}

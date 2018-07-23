@@ -17,6 +17,14 @@ const pointerInColumn = (node, x, y) => {
 const propTypes = {}
 
 class EventContainerWrapper extends React.Component {
+  static propTypes = {
+    accessors: PropTypes.object.isRequired,
+    components: PropTypes.object.isRequired,
+    getters: PropTypes.object.isRequired,
+    localizer: PropTypes.object.isRequired,
+    slotMetrics: PropTypes.object.isRequired,
+    resource: PropTypes.any,
+  }
   static contextTypes = {
     onEventDrop: PropTypes.func,
     movingEvent: PropTypes.object,
@@ -66,11 +74,10 @@ class EventContainerWrapper extends React.Component {
         'minutes'
       )
 
-      const {
-        startDate,
-        endDate,
-        ...state,
-      } = slotMetrics.getRange(currentSlot, end)
+      const { startDate, endDate, ...state } = slotMetrics.getRange(
+        currentSlot,
+        end
+      )
 
       return {
         event: {
@@ -135,9 +142,6 @@ class EventContainerWrapper extends React.Component {
       components,
       getters,
       slotMetrics,
-      formats,
-      messages,
-      culture,
       localizer,
     } = this.props
 
@@ -149,17 +153,17 @@ class EventContainerWrapper extends React.Component {
     const events = children.props.children
 
     const { start, end } = event
-    let format = formats.eventTimeRangeFormat
-    let label
+    let format = 'eventTimeRangeFormat'
 
+    let label
     const startsBeforeDay = slotMetrics.startsBeforeDay(start)
     const startsAfterDay = slotMetrics.startsAfterDay(end)
 
-    if (startsBeforeDay) format = formats.eventTimeRangeEndFormat
-    else if (startsAfterDay) format = formats.eventTimeRangeStartFormat
+    if (startsBeforeDay) format = 'eventTimeRangeEndFormat'
+    else if (startsAfterDay) format = 'eventTimeRangeStartFormat'
 
-    if (startsBeforeDay && startsAfterDay) label = messages.allDay
-    else label = localizer.format({ start, end }, format, culture)
+    if (startsBeforeDay && startsAfterDay) label = localizer.messages.allDay
+    else label = localizer.format({ start, end }, format)
 
     return React.cloneElement(children, {
       children: (
@@ -172,7 +176,7 @@ class EventContainerWrapper extends React.Component {
                 event={event}
                 label={label}
                 className="rbc-addons-dnd-drag-preview"
-                style={{ top, height, width: '100%' }}
+                style={{ top, height, width: 100 }}
                 eventComponent={components.event}
                 eventPropGetter={getters.eventProp}
                 accessors={{ ...accessors, ...dragAccessors }}

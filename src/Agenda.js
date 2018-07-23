@@ -4,11 +4,8 @@ import classes from 'dom-helpers/class'
 import getWidth from 'dom-helpers/query/width'
 import scrollbarSize from 'dom-helpers/util/scrollbarSize'
 
-import localizer from './localizer'
-import message from './utils/messages'
 import dates from './utils/dates'
 import { navigate } from './utils/constants'
-import { dateFormat, dateRangeFormat } from './utils/propTypes'
 import { inRange } from './utils/eventLevels'
 import { isSelected } from './utils/selection'
 
@@ -23,17 +20,7 @@ class Agenda extends React.Component {
     accessors: PropTypes.object.isRequired,
     components: PropTypes.object.isRequired,
     getters: PropTypes.object.isRequired,
-    formats: PropTypes.shape({
-      agendaDateFormat: dateFormat,
-      agendaTimeFormat: dateFormat,
-      agendaTimeRangeFormat: dateRangeFormat,
-    }).isRequired,
-
-    culture: PropTypes.string,
-    messages: PropTypes.shape({
-      date: PropTypes.string,
-      time: PropTypes.string,
-    }),
+    localizer: PropTypes.object.isRequired,
   }
 
   static defaultProps = {
@@ -49,8 +36,8 @@ class Agenda extends React.Component {
   }
 
   render() {
-    let { length, date, events, accessors } = this.props
-    let messages = message(this.props.messages)
+    let { length, date, events, accessors, localizer } = this.props
+    let { messages } = localizer
     let end = dates.add(date, length, 'day')
 
     let range = dates.range(date, end, 'day')
@@ -87,12 +74,10 @@ class Agenda extends React.Component {
 
   renderDay = (day, events, dayKey) => {
     let {
-      culture,
-      components,
       selected,
       getters,
       accessors,
-      formats,
+      localizer,
       components: { event: Event, date: AgendaDate },
     } = this.props
 
@@ -112,8 +97,7 @@ class Agenda extends React.Component {
         isSelected(event, selected)
       )
 
-      let dateLabel =
-        idx === 0 && localizer.format(day, formats.agendaDateFormat, culture)
+      let dateLabel = idx === 0 && localizer.format(day, 'agendaDateFormat')
       let first =
         idx === 0 ? (
           <td rowSpan={events.length} className="rbc-agenda-date-cell">
@@ -146,26 +130,22 @@ class Agenda extends React.Component {
   }
 
   timeRangeLabel = (day, event) => {
-    let { accessors, culture, messages, components, formats } = this.props
+    let { accessors, localizer, components } = this.props
 
     let labelClass = '',
       TimeComponent = components.time,
-      label = message(messages).allDay
+      label = localizer.messages.allDay
 
     let end = accessors.end(event)
     let start = accessors.start(event)
 
     if (!accessors.allDay(event)) {
       if (dates.eq(start, end, 'day')) {
-        label = localizer.format(
-          { start, end },
-          formats.agendaTimeRangeFormat,
-          culture
-        )
+        label = localizer.format({ start, end }, 'agendaTimeRangeFormat')
       } else if (dates.eq(day, start, 'day')) {
-        label = localizer.format(start, formats.agendaTimeFormat, culture)
+        label = localizer.format(start, 'agendaTimeFormat')
       } else if (dates.eq(day, end, 'day')) {
-        label = localizer.format(end, formats.agendaTimeFormat, culture)
+        label = localizer.format(end, 'agendaTimeFormat')
       }
     }
 
@@ -230,12 +210,9 @@ Agenda.navigate = (date, action, { length = Agenda.defaultProps.length }) => {
   }
 }
 
-Agenda.title = (
-  start,
-  { length = Agenda.defaultProps.length, formats, culture }
-) => {
+Agenda.title = (start, { length = Agenda.defaultProps.length, localizer }) => {
   let end = dates.add(start, length, 'day')
-  return localizer.format({ start, end }, formats.agendaHeaderFormat, culture)
+  return localizer.format({ start, end }, 'agendaHeaderFormat')
 }
 
 export default Agenda

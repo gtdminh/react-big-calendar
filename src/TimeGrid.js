@@ -10,7 +10,6 @@ import TimeGutter from './TimeGutter'
 
 import getWidth from 'dom-helpers/query/width'
 import TimeGridHeader from './TimeGridHeader'
-import { dateFormat } from './utils/propTypes'
 import { notify } from './utils/helpers'
 import { inRange, sortEvents } from './utils/eventLevels'
 
@@ -20,17 +19,14 @@ export default class TimeGrid extends Component {
     resources: PropTypes.array,
 
     step: PropTypes.number,
+    timeslots: PropTypes.number,
     range: PropTypes.arrayOf(PropTypes.instanceOf(Date)),
     min: PropTypes.instanceOf(Date),
     max: PropTypes.instanceOf(Date),
     getNow: PropTypes.func.isRequired,
 
     scrollToTime: PropTypes.instanceOf(Date),
-    eventPropGetter: PropTypes.func,
-    dayPropGetter: PropTypes.func,
-    dayFormat: dateFormat,
     showMultiDayTimes: PropTypes.bool,
-    culture: PropTypes.string,
 
     rtl: PropTypes.bool,
     width: PropTypes.number,
@@ -38,10 +34,7 @@ export default class TimeGrid extends Component {
     accessors: PropTypes.object.isRequired,
     components: PropTypes.object.isRequired,
     getters: PropTypes.object.isRequired,
-
-    formats: PropTypes.shape({
-      dayFormat: dateFormat,
-    }).isRequired,
+    localizer: PropTypes.object.isRequired,
 
     selected: PropTypes.object,
     selectable: PropTypes.oneOf([true, false, 'ignoreEvents']),
@@ -55,8 +48,6 @@ export default class TimeGrid extends Component {
     onDoubleClickEvent: PropTypes.func,
     onDrillDown: PropTypes.func,
     getDrilldownView: PropTypes.func.isRequired,
-
-    messages: PropTypes.object,
   }
 
   static defaultProps = {
@@ -146,7 +137,7 @@ export default class TimeGrid extends Component {
   }
 
   renderEvents(range, events, today, resources) {
-    let { min, max, components, accessors } = this.props
+    let { min, max, components, accessors, localizer } = this.props
 
     return range.map((date, idx) => {
       let daysEvents = events.filter(event =>
@@ -162,6 +153,7 @@ export default class TimeGrid extends Component {
         return (
           <DayColumn
             {...this.props}
+            localizer={localizer}
             min={dates.merge(date, min)}
             max={dates.merge(date, max)}
             resource={resourceId}
@@ -187,7 +179,7 @@ export default class TimeGrid extends Component {
       components,
       accessors,
       getters,
-      formats,
+      localizer,
       min,
       max,
       showMultiDayTimes,
@@ -230,8 +222,7 @@ export default class TimeGrid extends Component {
           events={allDayEvents}
           width={width}
           getNow={getNow}
-          dayFormat={formats.dayFormat}
-          culture={this.props.culture}
+          localizer={localizer}
           resources={resources}
           selected={selected}
           selectable={this.props.selectable}
@@ -250,12 +241,11 @@ export default class TimeGrid extends Component {
           <TimeGutter
             date={start}
             ref={this.gutterRef}
-            formats={formats}
+            localizer={localizer}
             min={dates.merge(start, min)}
             max={dates.merge(start, max)}
             step={this.props.step}
             getNow={this.props.getNow}
-            culture={this.props.culture}
             timeslots={this.props.timeslots}
             className="rbc-time-gutter"
           />

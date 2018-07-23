@@ -12,6 +12,7 @@ export default {
     isAllDay: PropTypes.bool,
 
     accessors: PropTypes.object.isRequired,
+    localizer: PropTypes.object.isRequired,
     components: PropTypes.object.isRequired,
     getters: PropTypes.object.isRequired,
 

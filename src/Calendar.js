@@ -13,7 +13,7 @@ import warning from 'warning'
 
 import { notify } from './utils/helpers'
 import { navigate, views } from './utils/constants'
-import defaultFormats from './formats'
+import { mergeWithDefaults } from './localizer'
 import message from './utils/messages'
 import moveDate from './utils/move'
 import VIEWS from './Views'
@@ -60,6 +60,8 @@ function isValidView(view, { views: _views }) {
  */
 class Calendar extends React.Component {
   static propTypes = {
+    localizer: PropTypes.object.isRequired,
+
     /**
      * Props passed to main calendar `<div>`.
      *
@@ -740,16 +742,17 @@ class Calendar extends React.Component {
     dayPropGetter,
     view,
     views,
+    localizer,
+    culture,
     messages = {},
     components = {},
     formats = {},
   }) {
     let names = viewNames(views)
-
+    const msgs = message(messages)
     return {
       viewNames: names,
-      messages: message(messages),
-      formats: defaultFormats(formats),
+      localizer: mergeWithDefaults(localizer, culture, formats, msgs),
       getters: {
         eventProp: (...args) =>
           (eventPropGetter && eventPropGetter(...args)) || {},
@@ -837,13 +840,12 @@ class Calendar extends React.Component {
       accessors,
       components,
       getters,
-      formats,
-      messages,
+      localizer,
       viewNames,
     } = this.state.context
 
     let CalToolbar = components.toolbar || Toolbar
-    const label = View.title(current, { formats, culture, length })
+    const label = View.title(current, { localizer, length })
 
     return (
       <div
@@ -859,20 +861,18 @@ class Calendar extends React.Component {
             label={label}
             onViewChange={this.handleViewChange}
             onNavigate={this.handleNavigate}
-            messages={messages}
+            localizer={localizer}
           />
         )}
         <View
           ref="view"
           {...props}
-          messages={messages}
           culture={culture}
-          formats={undefined}
           events={events}
           date={current}
           getNow={getNow}
           length={length}
-          formats={formats}
+          localizer={localizer}
           getters={getters}
           components={components}
           accessors={accessors}
