@@ -30,7 +30,7 @@ let demoRoot =
   'https://github.com/intljusticemission/react-big-calendar/tree/master/examples/demos'
 
 class Example extends React.Component {
-  state = { selected: 'basic' }
+  state = { selected: 'dnd' }
 
   render() {
     let selected = this.state.selected

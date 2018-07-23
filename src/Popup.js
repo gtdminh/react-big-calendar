@@ -3,6 +3,7 @@ import React from 'react'
 import getOffset from 'dom-helpers/query/offset'
 import getScrollTop from 'dom-helpers/query/scrollTop'
 import getScrollLeft from 'dom-helpers/query/scrollLeft'
+import dates from './utils/dates'
 
 import EventCell from './EventCell'
 import { isSelected } from './utils/selection'
@@ -24,6 +25,7 @@ const propTypes = {
   eventWrapperComponent: elementType,
   dayHeaderFormat: dateFormat,
 }
+
 class Popup extends React.Component {
   componentDidMount() {
     let { popupOffset = 5 } = this.props,
@@ -49,9 +51,15 @@ class Popup extends React.Component {
     let {
       events,
       selected,
-      eventComponent,
-      eventWrapperComponent,
-      ...props
+      getters,
+      accessors,
+      components,
+      onSelect,
+      onDoubleClick,
+      slotStart,
+      slotEnd,
+      culture,
+      formats,
     } = this.props
 
     let { left, width, top } = this.props.position,
@@ -67,19 +75,19 @@ class Popup extends React.Component {
     return (
       <div ref="root" style={style} className="rbc-overlay">
         <div className="rbc-overlay-header">
-          {localizer.format(
-            props.slotStart,
-            props.dayHeaderFormat,
-            props.culture
-          )}
+          {localizer.format(slotStart, formats.dayHeaderFormat, culture)}
         </div>
         {events.map((event, idx) => (
           <EventCell
             key={idx}
-            {...props}
             event={event}
-            eventComponent={eventComponent}
-            eventWrapperComponent={eventWrapperComponent}
+            getters={getters}
+            onSelect={onSelect}
+            accessors={accessors}
+            components={components}
+            onDoubleClick={onDoubleClick}
+            continuesPrior={dates.lt(accessors.end(event), slotStart, 'day')}
+            continuesAfter={dates.gte(accessors.start(event), slotEnd, 'day')}
             selected={isSelected(event, selected)}
           />
         ))}

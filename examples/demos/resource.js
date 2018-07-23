@@ -13,6 +13,7 @@ const events = [
   {
     id: 1,
     title: 'MS training',
+    allDay: true,
     start: new Date(2018, 0, 29, 14, 0, 0),
     end: new Date(2018, 0, 29, 16, 30, 0),
     resourceId: 2,

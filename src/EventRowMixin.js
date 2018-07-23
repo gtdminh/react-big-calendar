@@ -1,29 +1,20 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import { findDOMNode } from 'react-dom'
 import EventCell from './EventCell'
-import getHeight from 'dom-helpers/query/height'
-import { accessor, elementType } from './utils/propTypes'
 import { isSelected } from './utils/selection'
 
 /* eslint-disable react/prop-types */
 export default {
   propTypes: {
-    slots: PropTypes.number.isRequired,
-    end: PropTypes.instanceOf(Date),
-    start: PropTypes.instanceOf(Date),
+    slotMetrics: PropTypes.object.isRequired,
 
     selected: PropTypes.object,
     isAllDay: PropTypes.bool,
-    eventPropGetter: PropTypes.func,
-    titleAccessor: accessor,
-    tooltipAccessor: accessor,
-    allDayAccessor: accessor,
-    startAccessor: accessor,
-    endAccessor: accessor,
 
-    eventComponent: elementType,
-    eventWrapperComponent: elementType.isRequired,
+    accessors: PropTypes.object.isRequired,
+    components: PropTypes.object.isRequired,
+    getters: PropTypes.object.isRequired,
+
     onSelect: PropTypes.func,
     onDoubleClick: PropTypes.func,
   },
@@ -31,44 +22,35 @@ export default {
   defaultProps: {
     segments: [],
     selected: {},
-    slots: 7,
   },
 
   renderEvent(props, event) {
     let {
-      eventPropGetter,
       selected,
       isAllDay,
-      start,
-      end,
-      startAccessor,
-      endAccessor,
-      titleAccessor,
-      tooltipAccessor,
-      allDayAccessor,
-      eventComponent,
-      eventWrapperComponent,
+      components,
+      accessors,
+      getters,
       onSelect,
       onDoubleClick,
+      slotMetrics,
     } = props
+
+    let continuesPrior = slotMetrics.startsBefore(accessors.start(event))
+    let continuesAfter = slotMetrics.endsAfter(accessors.end(event))
 
     return (
       <EventCell
         event={event}
-        eventWrapperComponent={eventWrapperComponent}
-        eventPropGetter={eventPropGetter}
+        getters={getters}
+        accessors={accessors}
+        components={components}
         onSelect={onSelect}
         onDoubleClick={onDoubleClick}
+        continuesPrior={continuesPrior}
+        continuesAfter={continuesAfter}
         selected={isSelected(event, selected)}
         isAllDay={isAllDay}
-        startAccessor={startAccessor}
-        endAccessor={endAccessor}
-        titleAccessor={titleAccessor}
-        tooltipAccessor={tooltipAccessor}
-        allDayAccessor={allDayAccessor}
-        slotStart={start}
-        slotEnd={end}
-        eventComponent={eventComponent}
       />
     )
   },
@@ -86,9 +68,5 @@ export default {
         {content}
       </div>
     )
-  },
-
-  getRowHeight() {
-    getHeight(findDOMNode(this))
   },
 }

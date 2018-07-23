@@ -27,34 +27,19 @@ class TimeGridHeader extends React.Component {
     rtl: PropTypes.bool,
     width: PropTypes.number,
 
-    titleAccessor: accessor.isRequired,
-    tooltipAccessor: accessor.isRequired,
-    allDayAccessor: accessor.isRequired,
-    startAccessor: accessor.isRequired,
-    endAccessor: accessor.isRequired,
-    resourceAccessor: accessor.isRequired,
-
-    resourceIdAccessor: accessor.isRequired,
-    resourceTitleAccessor: accessor.isRequired,
+    accessors: PropTypes.object.isRequired,
+    components: PropTypes.object.isRequired,
+    getters: PropTypes.object.isRequired,
 
     selected: PropTypes.object,
     selectable: PropTypes.oneOf([true, false, 'ignoreEvents']),
     longPressThreshold: PropTypes.number,
-
-    headerComponent: elementType,
-    eventComponent: elementType,
-    eventWrapperComponent: elementType.isRequired,
-    dateCellWrapperComponent: elementType,
-    timeGutterHeaderComponent: elementType,
 
     onSelectSlot: PropTypes.func,
     onSelectEvent: PropTypes.func,
     onDoubleClickEvent: PropTypes.func,
     onDrillDown: PropTypes.func,
     getDrilldownView: PropTypes.func.isRequired,
-  }
-  static defaultProps = {
-    headerComponent: Header,
   }
 
   handleHeaderClick = (date, view, e) => {
@@ -63,7 +48,7 @@ class TimeGridHeader extends React.Component {
   }
 
   renderHeaderResources(range, resources) {
-    const { resourceTitleAccessor, getNow } = this.props
+    const { accessors, getNow } = this.props
     const today = getNow()
 
     return range.map((date, i) => {
@@ -76,7 +61,7 @@ class TimeGridHeader extends React.Component {
               dates.eq(date, today, 'day') && 'rbc-today'
             )}
           >
-            {get(resource, resourceTitleAccessor)}
+            {accessors.resourceTitle(resource)}
           </div>
         )
       })
@@ -90,7 +75,7 @@ class TimeGridHeader extends React.Component {
       dayPropGetter,
       getDrilldownView,
       getNow,
-      headerComponent: Header,
+      components: { header: HeaderComponent = Header },
     } = this.props
 
     const today = getNow()
@@ -102,7 +87,7 @@ class TimeGridHeader extends React.Component {
       const { className, style } = (dayPropGetter && dayPropGetter(date)) || {}
 
       let header = (
-        <Header
+        <HeaderComponent
           date={date}
           label={label}
           localizer={localizer}
@@ -135,21 +120,54 @@ class TimeGridHeader extends React.Component {
       )
     })
   }
+  renderRow = resource => {
+    let {
+      events,
+      rtl,
+      selectable,
+      getNow,
+      range,
+      getters,
+      accessors,
+      components,
+    } = this.props
+
+    const resourceId = accessors.resourceId(resource)
+    let eventsToDisplay = resource
+      ? events.filter(event => accessors.resource(event) === resourceId)
+      : events
+
+    return (
+      <DateContentRow
+        isAllDay
+        rtl={rtl}
+        getNow={getNow}
+        minRows={2}
+        range={range}
+        events={eventsToDisplay}
+        resourceId={resourceId}
+        className="rbc-allday-cell"
+        selectable={selectable}
+        selected={this.props.selected}
+        components={components}
+        accessors={accessors}
+        getters={getters}
+        onSelect={this.props.onSelectEvent}
+        onDoubleClick={this.props.onDoubleClickEvent}
+        onSelectSlot={this.props.onSelectSlot}
+        longPressThreshold={this.props.longPressThreshold}
+      />
+    )
+  }
 
   render() {
     let {
       width,
-      events,
       rtl,
-      selectable,
       resources,
-      getNow,
       range,
       isOverflowing,
-      eventComponent,
-      dateCellWrapperComponent,
-      eventWrapperComponent,
-      timeGutterHeaderComponent: TimeGutterHeader,
+      components: { timeGutterHeader: TimeGutterHeader },
     } = this.props
 
     let style = {}
@@ -177,31 +195,13 @@ class TimeGridHeader extends React.Component {
             </div>
           )}
 
-          <DateContentRow
-            isAllDay
-            rtl={rtl}
-            getNow={getNow}
-            minRows={2}
-            range={range}
-            events={events}
-            className="rbc-allday-cell"
-            selectable={selectable}
-            selected={this.props.selected}
-            eventComponent={eventComponent}
-            eventWrapperComponent={eventWrapperComponent}
-            dateCellWrapperComponent={dateCellWrapperComponent}
-            dayPropGetter={this.props.dayPropGetter}
-            titleAccessor={this.props.titleAccessor}
-            tooltipAccessor={this.props.tooltipAccessor}
-            startAccessor={this.props.startAccessor}
-            endAccessor={this.props.endAccessor}
-            allDayAccessor={this.props.allDayAccessor}
-            eventPropGetter={this.props.eventPropGetter}
-            onSelect={this.props.onSelectEvent}
-            onDoubleClick={this.props.onDoubleClickEvent}
-            onSelectSlot={this.props.onSelectSlot}
-            longPressThreshold={this.props.longPressThreshold}
-          />
+          {resources ? (
+            <div className="rbc-row rbc-row-resource">
+              {resources.map(resource => this.renderRow(resource))}
+            </div>
+          ) : (
+            this.renderRow()
+          )}
         </div>
       </div>
     )

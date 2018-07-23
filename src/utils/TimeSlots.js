@@ -95,12 +95,22 @@ export function getSlotMetrics({ min: start, max: end, step, timeslots }) {
       return slots[slot]
     },
 
+    startsBeforeDay(date) {
+      return dates.lt(date, start, 'day')
+    },
+
+    startsAfterDay(date) {
+      return dates.gt(date, end, 'day')
+    },
+
     startsBefore(date) {
       return dates.lt(dates.merge(start, date), start, 'minutes')
     },
+
     startsAfter(date) {
       return dates.gt(dates.merge(end, date), end, 'minutes')
     },
+
     getRange(rangeStart, rangeEnd) {
       rangeStart = dates.min(end, dates.max(start, rangeStart))
       rangeEnd = dates.min(end, dates.max(start, rangeEnd))

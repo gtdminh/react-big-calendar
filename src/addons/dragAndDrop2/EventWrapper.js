@@ -1,9 +1,6 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import { DragSource } from 'react-dnd'
-import { getEmptyImage } from 'react-dnd-html5-backend'
 import cn from 'classnames'
-import compose from './compose'
 import { accessor } from '../../utils/propTypes'
 import { accessor as get } from '../../utils/accessors'
 
@@ -14,20 +11,13 @@ class DraggableEventWrapper extends React.Component {
     components: PropTypes.object,
     draggableAccessor: accessor,
     resizableAccessor: accessor,
+    onMove: PropTypes.func.isRequired,
+    movingEvent: PropTypes.object,
   }
 
   static propTypes = {
     event: PropTypes.object.isRequired,
-
-    connectDragSource: PropTypes.func.isRequired,
-    connectTopDragPreview: PropTypes.func.isRequired,
-    connectTopDragSource: PropTypes.func.isRequired,
-    connectBottomDragPreview: PropTypes.func.isRequired,
-    connectBottomDragSource: PropTypes.func.isRequired,
-    connectLeftDragPreview: PropTypes.func.isRequired,
-    connectLeftDragSource: PropTypes.func.isRequired,
-    connectRightDragPreview: PropTypes.func.isRequired,
-    connectRightDragSource: PropTypes.func.isRequired,
+    slotMetrics: PropTypes.object.isRequired,
 
     draggable: PropTypes.bool,
     allDay: PropTypes.bool,
@@ -38,16 +28,8 @@ class DraggableEventWrapper extends React.Component {
     isResizing: PropTypes.bool,
   }
 
-  componentDidMount() {
-    // this is needed to prevent the backend from
-    // screenshot'ing the event during a resize which
-    // would be very confusing visually
-    const emptyImage = getEmptyImage()
-    const previewOptions = { captureDraggingState: true }
-    this.props.connectTopDragPreview(emptyImage, previewOptions)
-    this.props.connectBottomDragPreview(emptyImage, previewOptions)
-    this.props.connectLeftDragPreview(emptyImage, previewOptions)
-    this.props.connectRightDragPreview(emptyImage, previewOptions)
+  handleStartDragging = e => {
+    if (e.button === 0) this.context.onMove(this.props.event)
   }
 
   render() {
@@ -56,24 +38,22 @@ class DraggableEventWrapper extends React.Component {
       components.eventWrapper || BigCalendar.components.eventWrapper
 
     let {
-      connectDragSource,
-      connectTopDragSource,
-      connectBottomDragSource,
-      connectLeftDragSource,
-      connectRightDragSource,
-      isDragging,
       isResizing,
       children,
       event,
       allDay,
-      isRow,
-      offset,
+      type,
       continuesPrior,
       continuesAfter,
     } = this.props
 
+    if (event.__isPreview)
+      return React.cloneElement(children, {
+        className: cn(children.props.className, 'rbc-addons-dnd-drag-preview'),
+      })
+
     let { draggableAccessor, resizableAccessor } = this.context
-    console.log(offset)
+
     let isDraggable = draggableAccessor ? !!get(event, draggableAccessor) : true
 
     /* Event is not draggable, no need to wrap it */
@@ -107,22 +87,22 @@ class DraggableEventWrapper extends React.Component {
     let isResizable = resizableAccessor ? !!get(event, resizableAccessor) : true
 
     if (isResizable) {
-      if (isRow || allDay) {
+      if (type === 'date' || allDay) {
         const anchor = (
           <div className="rbc-addons-dnd-resize-ew-anchor">
             <div className="rbc-addons-dnd-resize-ew-icon" />
           </div>
         )
-        StartAnchor = !continuesPrior && connectLeftDragSource(anchor)
-        EndAnchor = !continuesAfter && connectRightDragSource(anchor)
+        StartAnchor = !continuesPrior && anchor
+        EndAnchor = !continuesAfter && anchor
       } else {
         const anchor = (
           <div className="rbc-addons-dnd-resize-ns-anchor">
             <div className="rbc-addons-dnd-resize-ns-icon" />
           </div>
         )
-        StartAnchor = !continuesPrior && connectTopDragSource(anchor)
-        EndAnchor = !continuesAfter && connectBottomDragSource(anchor)
+        StartAnchor = !continuesPrior && anchor
+        EndAnchor = !continuesAfter && anchor
       }
 
       /*
@@ -141,7 +121,11 @@ class DraggableEventWrapper extends React.Component {
         </div>
       )
 
+      const isDragging = this.context.movingEvent === event
+
       children = React.cloneElement(children, {
+        onMouseDown: this.handleStartDragging,
+        onTouchStart: this.handleStartDragging,
         className: cn(
           children.props.className,
           isDragging && 'rbc-addons-dnd-dragging',
@@ -153,42 +137,10 @@ class DraggableEventWrapper extends React.Component {
 
     return (
       <EventWrapper event={event} allDay={allDay}>
-        {connectDragSource(children)}
+        {children}
       </EventWrapper>
     )
   }
 }
 
-/* drag sources */
-const makeEventSource = anchor => ({
-  beginDrag: ({ event }) => ({ event, anchor }),
-  //canDrag: ({ event }) => true, // support per-event dragability/sizability
-})
-
-export default compose(
-  DragSource('event', makeEventSource('drop'), (connect, monitor) => ({
-    connectDragSource: connect.dragSource(),
-    isDragging: monitor.isDragging(),
-  })),
-  DragSource('event', makeEventSource('resizeTop'), (connect, monitor) => ({
-    connectTopDragSource: connect.dragSource(),
-    connectTopDragPreview: connect.dragPreview(),
-    isResizing: monitor.isDragging(),
-    offset: monitor.getClientOffset(),
-  })),
-  DragSource('event', makeEventSource('resizeBottom'), (connect, monitor) => ({
-    connectBottomDragSource: connect.dragSource(),
-    connectBottomDragPreview: connect.dragPreview(),
-    isResizing: monitor.isDragging(),
-  })),
-  DragSource('event', makeEventSource('resizeLeft'), (connect, monitor) => ({
-    connectLeftDragSource: connect.dragSource(),
-    connectLeftDragPreview: connect.dragPreview(),
-    isResizing: monitor.isDragging(),
-  })),
-  DragSource('event', makeEventSource('resizeRight'), (connect, monitor) => ({
-    connectRightDragSource: connect.dragSource(),
-    connectRightDragPreview: connect.dragPreview(),
-    isResizing: monitor.isDragging(),
-  }))
-)(DraggableEventWrapper)
+export default DraggableEventWrapper

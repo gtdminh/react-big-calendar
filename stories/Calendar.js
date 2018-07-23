@@ -458,11 +458,20 @@ storiesOf('module.Calendar.week', module)
         <Calendar
           showMultiDayTimes
           defaultDate={new Date(2016, 11, 4)}
+          max={moment()
+            .endOf('day')
+            .add(-1, 'hours')
+            .toDate()}
           events={[
             {
               title: 'start of the week',
               start: new Date(2016, 11, 4, 15),
               end: new Date(2016, 11, 5, 3),
+            },
+            {
+              title: 'single day longer than max',
+              start: new Date(2016, 11, 4, 15),
+              end: new Date(2016, 11, 4, 23, 30),
             },
             {
               title: 'end of the week',

@@ -6,13 +6,10 @@ import React from 'react'
 import { findDOMNode } from 'react-dom'
 
 import dates from './utils/dates'
-import { accessor, elementType } from './utils/propTypes'
-import { eventSegments, endOfRange, eventLevels } from './utils/eventLevels'
 import BackgroundCells from './BackgroundCells'
 import EventRow from './EventRow'
 import EventEndingRow from './EventEndingRow'
-
-let isSegmentInSlot = (seg, slot) => seg.left <= slot && seg.right >= slot
+import * as DateSlotMetrics from './utils/DateSlotMetrics'
 
 const propTypes = {
   date: PropTypes.instanceOf(Date),
@@ -35,12 +32,12 @@ const propTypes = {
   dayPropGetter: PropTypes.func,
 
   getNow: PropTypes.func.isRequired,
-  startAccessor: accessor.isRequired,
-  endAccessor: accessor.isRequired,
 
-  eventComponent: elementType,
-  eventWrapperComponent: elementType.isRequired,
-  dateCellWrapperComponent: elementType,
+  accessors: PropTypes.object.isRequired,
+  components: PropTypes.object.isRequired,
+  getters: PropTypes.object.isRequired,
+  formats: PropTypes.object.isRequired,
+
   minRows: PropTypes.number.isRequired,
   maxRows: PropTypes.number.isRequired,
 }
@@ -51,6 +48,12 @@ const defaultProps = {
 }
 
 class DateContentRow extends React.Component {
+  constructor(...args) {
+    super(...args)
+
+    this.slotMetrics = DateSlotMetrics.getSlotMetrics()
+  }
+
   handleSelectSlot = slot => {
     const { range, onSelectSlot } = this.props
 
@@ -59,15 +62,13 @@ class DateContentRow extends React.Component {
 
   handleShowMore = slot => {
     const { range, onShowMore } = this.props
+    let metrics = this.slotMetrics(this.props)
     let row = qsa(findDOMNode(this), '.rbc-row-bg')[0]
 
     let cell
     if (row) cell = row.children[slot - 1]
 
-    let events = this.segments
-      .filter(seg => isSegmentInSlot(seg, slot))
-      .map(seg => seg.event)
-
+    let events = metrics.getEventsForSlot(slot)
     onShowMore(events, range[slot - 1], cell, slot)
   }
 
@@ -131,46 +132,43 @@ class DateContentRow extends React.Component {
     const {
       date,
       rtl,
-      events,
       range,
       className,
+      selected,
       selectable,
-      dayPropGetter,
       renderForMeasure,
-      startAccessor,
-      endAccessor,
+
+      accessors,
+      getters,
+      messages,
+      formats,
+      components,
+
       getNow,
       renderHeader,
-      minRows,
-      maxRows,
-      dateCellWrapperComponent,
-      eventComponent,
-      eventWrapperComponent,
+      onSelect,
       onSelectStart,
       onSelectEnd,
+      onDoubleClick,
       longPressThreshold,
-      ...props
     } = this.props
 
     if (renderForMeasure) return this.renderDummy()
 
-    let { first, last } = endOfRange(range)
+    let metrics = this.slotMetrics(this.props)
+    let { levels, extra } = metrics
 
-    let segments = (this.segments = events.map(evt =>
-      eventSegments(
-        evt,
-        first,
-        last,
-        {
-          startAccessor,
-          endAccessor,
-        },
-        range
-      )
-    ))
+    let WeekWrapper = components.weekWrapper
 
-    let { levels, extra } = eventLevels(segments, Math.max(maxRows - 1, 1))
-    while (levels.length < minRows) levels.push([])
+    const eventRowProps = {
+      selected,
+      accessors,
+      getters,
+      components,
+      onSelect,
+      onDoubleClick,
+      slotMetrics: metrics,
+    }
 
     return (
       <div className={className}>
@@ -181,47 +179,33 @@ class DateContentRow extends React.Component {
           range={range}
           selectable={selectable}
           container={this.getContainer}
-          dayPropGetter={dayPropGetter}
+          getters={getters}
           onSelectStart={onSelectStart}
           onSelectEnd={onSelectEnd}
           onSelectSlot={this.handleSelectSlot}
-          cellWrapperComponent={dateCellWrapperComponent}
+          components={components}
           longPressThreshold={longPressThreshold}
         />
 
         <div className="rbc-row-content">
           {renderHeader && (
-            <div className="rbc-row" ref={this.createHeadingRef}>
+            <div className="rbc-row " ref={this.createHeadingRef}>
               {range.map(this.renderHeadingCell)}
             </div>
           )}
-          {levels.map((segs, idx) => (
-            <EventRow
-              {...props}
-              key={idx}
-              start={first}
-              end={last}
-              segments={segs}
-              slots={range.length}
-              eventComponent={eventComponent}
-              eventWrapperComponent={eventWrapperComponent}
-              startAccessor={startAccessor}
-              endAccessor={endAccessor}
-            />
-          ))}
-          {!!extra.length && (
-            <EventEndingRow
-              {...props}
-              start={first}
-              end={last}
-              segments={extra}
-              onShowMore={this.handleShowMore}
-              eventComponent={eventComponent}
-              eventWrapperComponent={eventWrapperComponent}
-              startAccessor={startAccessor}
-              endAccessor={endAccessor}
-            />
-          )}
+          <WeekWrapper {...eventRowProps}>
+            {levels.map((segs, idx) => (
+              <EventRow key={idx} segments={segs} {...eventRowProps} />
+            ))}
+            {!!extra.length && (
+              <EventEndingRow
+                segments={extra}
+                onShowMore={this.handleShowMore}
+                messages={messages}
+                {...eventRowProps}
+              />
+            )}
+          </WeekWrapper>
         </div>
       </div>
     )

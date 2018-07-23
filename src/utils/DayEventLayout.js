@@ -1,8 +1,7 @@
 import sortBy from 'lodash/sortBy'
-import { accessor as get } from './accessors'
 
 class Event {
-  constructor(data, { startAccessor, endAccessor, slotMetrics }) {
+  constructor(data, { accessors, slotMetrics }) {
     const {
       start,
       startDate,
@@ -10,7 +9,7 @@ class Event {
       endDate,
       top,
       height,
-    } = slotMetrics.getRange(get(data, startAccessor), get(data, endAccessor))
+    } = slotMetrics.getRange(accessors.start(data), accessors.end(data))
 
     this.start = start
     this.end = end
