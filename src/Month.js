@@ -19,8 +19,8 @@ import DateHeader from './DateHeader'
 
 import { inRange, sortEvents } from './utils/eventLevels'
 
-let eventsForWeek = (evts, start, end, props) =>
-  evts.filter(e => inRange(e, start, end, props))
+let eventsForWeek = (evts, start, end, accessors) =>
+  evts.filter(e => inRange(e, start, end, accessors))
 
 let propTypes = {
   events: PropTypes.array.isRequired,
@@ -150,8 +150,9 @@ class MonthView extends React.Component {
 
     const { needLimitMeasure, rowLimit } = this.state
 
-    events = eventsForWeek(events, week[0], week[week.length - 1], this.props)
-    events.sort((a, b) => sortEvents(a, b, this.props))
+    events = eventsForWeek(events, week[0], week[week.length - 1], accessors)
+
+    events.sort((a, b) => sortEvents(a, b, accessors))
 
     return (
       <DateContentRow

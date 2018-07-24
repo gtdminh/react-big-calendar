@@ -90,8 +90,6 @@
     "prettier": "^1.9.1",
     "react": "^16.4.1",
     "react-bootstrap": "^0.28.0",
-    "react-dnd": "^2.1.4",
-    "react-dnd-html5-backend": "^2.1.2",
     "react-docgen": "^2.14.1",
     "react-dom": "^16.4.1",
     "release-script": "^1.0.0",

@@ -1,6 +1,5 @@
 import findIndex from 'lodash/findIndex'
 import dates from './dates'
-import { accessor as get } from './accessors'
 
 export function endOfRange(dateRange, unit = 'day') {
   return {
@@ -56,9 +55,9 @@ export function eventLevels(rowSegments, limit = Infinity) {
   return { levels, extra }
 }
 
-export function inRange(e, start, end, { startAccessor, endAccessor }) {
-  let eStart = dates.startOf(get(e, startAccessor), 'day')
-  let eEnd = get(e, endAccessor)
+export function inRange(e, start, end, accessors) {
+  let eStart = dates.startOf(accessors.start(e), 'day')
+  let eEnd = accessors.end(e)
 
   let startsBeforeEnd = dates.lte(eStart, end, 'day')
   // when the event is zero duration we need to handle a bit differently
@@ -75,31 +74,27 @@ export function segsOverlap(seg, otherSegs) {
   )
 }
 
-export function sortEvents(
-  evtA,
-  evtB,
-  { startAccessor, endAccessor, allDayAccessor }
-) {
+export function sortEvents(evtA, evtB, accessors) {
   let startSort =
-    +dates.startOf(get(evtA, startAccessor), 'day') -
-    +dates.startOf(get(evtB, startAccessor), 'day')
+    +dates.startOf(accessors.start(evtA), 'day') -
+    +dates.startOf(accessors.start(evtB), 'day')
 
   let durA = dates.diff(
-    get(evtA, startAccessor),
-    dates.ceil(get(evtA, endAccessor), 'day'),
+    accessors.start(evtA),
+    dates.ceil(accessors.end(evtA), 'day'),
     'day'
   )
 
   let durB = dates.diff(
-    get(evtB, startAccessor),
-    dates.ceil(get(evtB, endAccessor), 'day'),
+    accessors.start(evtB),
+    dates.ceil(accessors.end(evtB), 'day'),
     'day'
   )
 
   return (
     startSort || // sort by start Day first
     Math.max(durB, 1) - Math.max(durA, 1) || // events spanning multiple days go first
-    !!get(evtB, allDayAccessor) - !!get(evtA, allDayAccessor) || // then allDay single day events
-    +get(evtA, startAccessor) - +get(evtB, startAccessor)
+    !!accessors.allDay(evtB) - !!accessors.allDay(evtA) || // then allDay single day events
+    +accessors.start(evtA) - +accessors.start(evtB)
   ) // then sort by start time
 }

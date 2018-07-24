@@ -13,7 +13,7 @@ import NoopWrapper from '../../NoopWrapper'
 
 const pointerInColumn = (node, x, y) => {
   const { left, right, top } = getBoundsForNode(node)
-  return x < right + 10 && x > left && y > top
+  return x < right + 10 && x > left && (y == null || y > top)
 }
 const propTypes = {}
 
@@ -29,8 +29,10 @@ class EventContainerWrapper extends React.Component {
 
   static contextTypes = {
     onEventDrop: PropTypes.func,
+    onEventResize: PropTypes.func,
     dragAndDropAction: PropTypes.object,
     onMove: PropTypes.func,
+    onResize: PropTypes.func,
   }
 
   constructor(...args) {
@@ -46,20 +48,21 @@ class EventContainerWrapper extends React.Component {
     this._teardownSelectable()
   }
 
-  maybeReset(node, point) {
-    if (!pointerInColumn(node, point.x, point.y)) {
-      if (this.state.event) this.setState({ event: null })
-      return true
-    }
+  reset() {
+    if (this.state.event)
+      this.setState({ event: null, top: null, height: null })
   }
 
   handleMove = ({ event }, point, node) => {
     const { slotMetrics } = this.props
 
-    if (this.maybeReset(node, point)) return
+    if (!pointerInColumn(node, point.x, point.y)) {
+      this.reset()
+      return
+    }
 
     let currentSlot = slotMetrics.closestSlotFromPoint(
-      point,
+      { y: point.y - this.eventOffsetTop, x: point.x },
       getBoundsForNode(node)
     )
 
@@ -87,13 +90,9 @@ class EventContainerWrapper extends React.Component {
   handleResize({ event, direction }, point, node) {
     let start, end
     const { accessors, slotMetrics } = this.props
+    const bounds = getBoundsForNode(node)
 
-    if (this.maybeReset(node, point)) return
-
-    let currentSlot = slotMetrics.closestSlotFromPoint(
-      point,
-      getBoundsForNode(node)
-    )
+    let currentSlot = slotMetrics.closestSlotFromPoint(point, bounds)
     if (direction === 'UP') {
       end = accessors.end(event)
       start = dates.min(currentSlot, slotMetrics.closestSlotFromDate(end, -1))
@@ -102,7 +101,7 @@ class EventContainerWrapper extends React.Component {
       end = dates.max(currentSlot, slotMetrics.closestSlotFromDate(start))
     }
 
-    const { startDate, endDate, ...state } = slotMetrics.getRange(start, end)
+    const { startDate, endDate, top, height } = slotMetrics.getRange(start, end)
 
     this.setState({
       event: {
@@ -110,7 +109,8 @@ class EventContainerWrapper extends React.Component {
         start: startDate,
         end: endDate,
       },
-      ...state,
+      top,
+      height,
     })
   }
 
@@ -119,6 +119,19 @@ class EventContainerWrapper extends React.Component {
     let selector = (this._selector = new Selection(() =>
       node.closest('.rbc-time-view')
     ))
+
+    selector.on('beforeSelect', point => {
+      const { action } = this.context.dragAndDropAction
+      const eventNode = getEventNodeFromPoint(node, point)
+
+      if (!eventNode) return false
+      this.eventOffsetTop = point.y - getBoundsForNode(eventNode).top
+
+      return (
+        action === 'move' ||
+        (action === 'resize' && pointerInColumn(node, point.x, point.y))
+      )
+    })
 
     let handler = box => {
       const { dragAndDropAction } = this.context
@@ -135,31 +148,35 @@ class EventContainerWrapper extends React.Component {
 
     selector.on('selecting', handler)
 
-    selector.on('selectStart', box => {
-      const eventNode = getEventNodeFromPoint(node, box)
-
-      if (!eventNode) return
-      this.eventOffsetTop = box.y - getBoundsForNode(eventNode).top
-      this.eventOffsetBottom = box.y - getBoundsForNode(eventNode).bottom
-
-      handler(box)
-    })
-
     selector.on('select', () => {
-      if (this.state.event) {
-        this.handleEventDrop(this.state.event)
+      const { dragAndDropAction } = this.context
+
+      switch (dragAndDropAction.action) {
+        case 'move':
+          this.handleEventDrop()
+          break
+        case 'resize':
+          this.handleEventResize()
+          break
       }
+
+      this._isInitialContainer = false
     })
+
     selector.on('click', () => {
+      this._isInitialContainer = false
       this.context.onMove(null)
     })
   }
 
-  handleEventDrop = ({ start, end }) => {
+  handleEventDrop = () => {
+    if (!this.state.event) return
+
     const { resource } = this.props
+    const { start, end } = this.state.event
     const { dragAndDropAction, onMove, onEventDrop } = this.context
 
-    this.setState({ event: null })
+    this.reset()
 
     onMove(null)
 
@@ -168,6 +185,22 @@ class EventContainerWrapper extends React.Component {
       start,
       event: dragAndDropAction.event,
       resourceId: resource,
+    })
+  }
+
+  handleEventResize = () => {
+    const { event } = this.state
+
+    const { dragAndDropAction, onResize, onEventResize } = this.context
+
+    this.reset()
+
+    onResize(null)
+
+    onEventResize({
+      event: dragAndDropAction.event,
+      start: event.start,
+      end: event.end,
     })
   }
 

@@ -4,6 +4,7 @@ import dates from '../../utils/dates'
 import { getSlotAtX, pointInBox } from '../../utils/selection'
 import { findDOMNode } from 'react-dom'
 
+import { eventSegments } from '../../utils/eventLevels'
 import Selection, { getBoundsForNode } from '../../Selection'
 import EventRow from '../../EventRow'
 import { dragAccessors } from './common'
@@ -21,8 +22,11 @@ class WeekWrapper extends React.Component {
 
   static contextTypes = {
     onEventDrop: PropTypes.func,
-    dragAndDropAction: PropTypes.object,
+    onEventResize: PropTypes.func,
+
     onMove: PropTypes.func,
+    onResize: PropTypes.func,
+    dragAndDropAction: PropTypes.object,
   }
 
   constructor(...args) {
@@ -38,6 +42,10 @@ class WeekWrapper extends React.Component {
     this._teardownSelectable()
   }
 
+  reset() {
+    if (this.state.segment) this.setState({ segment: null })
+  }
+
   handleMove = ({ event }, { x, y }, node) => {
     const metrics = this.props.slotMetrics
     const { accessors } = this.props
@@ -47,7 +55,7 @@ class WeekWrapper extends React.Component {
     let rowBox = getBoundsForNode(node)
 
     if (!pointInBox(rowBox, { x, y })) {
-      if (this.state.segment) this.setState({ segment: false })
+      this.reset()
       return
     }
 
@@ -63,23 +71,104 @@ class WeekWrapper extends React.Component {
       'minutes'
     )
 
-    const segment = metrics.getEventSegment(
-      { ...event, start, end, __isPreview: true },
+    const segment = eventSegments(
+      {
+        ...event,
+        end,
+        start,
+        __isPreview: true,
+      },
+      metrics.range,
       dragAccessors
     )
 
     this.setState({ segment })
   }
-  handleResize({ event, direction }, box, node) {}
+
+  handleResize({ event, direction }, point, node) {
+    let segment = null
+    let start, end
+    const { accessors, slotMetrics: metrics, isAllDay } = this.props
+
+    let rowBox = getBoundsForNode(node)
+    let cursorInRow = pointInBox(rowBox, point)
+
+    if (direction === 'RIGHT') {
+      start = accessors.start(event)
+
+      if (cursorInRow) {
+        if (metrics.last < start) return this.reset()
+        // add min
+        end = metrics.getDateForSlot(
+          getSlotAtX(rowBox, point.x, false, metrics.slots)
+        )
+      } else if (
+        dates.inRange(start, metrics.first, metrics.last) ||
+        (rowBox.bottom < point.y && +metrics.first > +start)
+      ) {
+        end = dates.add(metrics.last, 1, 'milliseconds')
+      } else {
+        this.setState({ segment: null })
+        return
+      }
+
+      end = dates.max(end, start)
+    } else if (direction === 'LEFT') {
+      end = accessors.end(event)
+
+      // inbetween Row
+      if (cursorInRow) {
+        if (metrics.first > end) return this.reset()
+
+        start = metrics.getDateForSlot(
+          getSlotAtX(rowBox, point.x, false, metrics.slots)
+        )
+      } else if (
+        dates.inRange(end, metrics.first, metrics.last) ||
+        (rowBox.top > point.y && +metrics.last < +end)
+      ) {
+        start = dates.add(metrics.first, -1, 'milliseconds')
+      } else {
+        this.reset()
+        return
+      }
+
+      start = dates.min(end, start)
+    }
+
+    segment = eventSegments(
+      {
+        ...event,
+        end,
+        start,
+        __isPreview: true,
+      },
+      metrics.range,
+      dragAccessors
+    )
+
+    this.setState({ segment })
+  }
+
   _selectable = () => {
     let node = findDOMNode(this).closest('.rbc-month-row, .rbc-allday-cell')
     let container = node.closest('.rbc-month-view, .rbc-time-view')
 
     let selector = (this._selector = new Selection(() => container))
 
+    selector.on('beforeSelect', point => {
+      const { isAllDay } = this.props
+      const { action } = this.context.dragAndDropAction
+
+      return (
+        action === 'move' ||
+        (action === 'resize' &&
+          (!isAllDay || pointInBox(getBoundsForNode(node), point)))
+      )
+    })
+
     let handler = box => {
       const { dragAndDropAction } = this.context
-      if (!dragAndDropAction) return
 
       switch (dragAndDropAction.action) {
         case 'move':
@@ -94,9 +183,16 @@ class WeekWrapper extends React.Component {
     selector.on('selecting', handler)
     selector.on('selectStart', handler)
 
-    selector.on('select', () => {
-      if (this.state.segment) {
-        this.handleEventDrop(this.state)
+    selector.on('select', box => {
+      const { dragAndDropAction } = this.context
+
+      switch (dragAndDropAction.action) {
+        case 'move':
+          this.handleEventDrop()
+          break
+        case 'resize':
+          this.handleEventResize(box, node)
+          break
       }
     })
 
@@ -105,19 +201,39 @@ class WeekWrapper extends React.Component {
     })
   }
 
-  handleEventDrop = ({ segment: { event } }) => {
+  handleEventResize = (box, node) => {
+    const { segment } = this.state
+
+    if (!segment || !pointInBox(getBoundsForNode(node), box)) return
+    const { dragAndDropAction, onResize, onEventResize } = this.context
+
+    this.reset()
+
+    onResize(null)
+
+    onEventResize({
+      event: dragAndDropAction.event,
+      start: segment.event.start,
+      end: segment.event.end,
+    })
+  }
+
+  handleEventDrop = () => {
     const { resourceId } = this.props
+    const { segment } = this.state
+
+    if (!segment) return
     const { dragAndDropAction, onMove, onEventDrop } = this.context
 
-    this.setState({ segment: null })
+    this.reset()
 
     onMove(null)
 
     onEventDrop({
       resourceId,
       event: dragAndDropAction.event,
-      start: event.start,
-      end: event.end,
+      start: segment.event.start,
+      end: segment.event.end,
       isAllDay: true,
     })
   }

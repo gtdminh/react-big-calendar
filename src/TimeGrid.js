@@ -197,7 +197,7 @@ export default class TimeGrid extends Component {
       rangeEvents = []
 
     events.forEach(event => {
-      if (inRange(event, start, end, this.props)) {
+      if (inRange(event, start, end, accessors)) {
         let eStart = accessors.start(event),
           eEnd = accessors.end(event)
 
@@ -213,7 +213,7 @@ export default class TimeGrid extends Component {
       }
     })
 
-    allDayEvents.sort((a, b) => sortEvents(a, b, this.props))
+    allDayEvents.sort((a, b) => sortEvents(a, b, accessors))
 
     return (
       <div className="rbc-time-view">

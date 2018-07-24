@@ -1,9 +1,9 @@
 import React from 'react'
 import events from '../events'
 import BigCalendar from 'react-big-calendar'
-import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop2'
+import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop'
 
-import 'react-big-calendar/lib/addons/dragAndDrop2/styles.less'
+import 'react-big-calendar/lib/addons/dragAndDrop/styles.less'
 
 const DragAndDropCalendar = withDragAndDrop(BigCalendar)
 
@@ -42,7 +42,7 @@ class Dnd extends React.Component {
     // alert(`${event.title} was dropped onto ${updatedEvent.start}`)
   }
 
-  resizeEvent = (resizeType, { event, start, end }) => {
+  resizeEvent = ({ event, start, end }) => {
     const { events } = this.state
 
     const nextEvents = events.map(existingEvent => {

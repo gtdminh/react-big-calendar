@@ -31,7 +31,7 @@ export default [
     id: 4,
     title: 'Some Event',
     start: new Date(2015, 3, 9, 0, 0, 0),
-    end: new Date(2015, 3, 9, 0, 0, 0),
+    end: new Date(2015, 3, 10, 0, 0, 0),
   },
   {
     id: 5,
@@ -86,7 +86,7 @@ export default [
     end: new Date(2015, 3, 18, 2, 0, 0),
   },
   {
-    id: 12,
+    id: 12.5,
     title: 'Late Same Night Event',
     start: new Date(2015, 3, 17, 19, 30, 0),
     end: new Date(2015, 3, 17, 23, 30, 0),

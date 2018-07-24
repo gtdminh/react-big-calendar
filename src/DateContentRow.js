@@ -154,6 +154,7 @@ class DateContentRow extends React.Component {
       onDoubleClick,
       resourceId,
       longPressThreshold,
+      isAllDay,
     } = this.props
 
     if (renderForMeasure) return this.renderDummy()
@@ -198,7 +199,7 @@ class DateContentRow extends React.Component {
               {range.map(this.renderHeadingCell)}
             </div>
           )}
-          <WeekWrapper {...eventRowProps}>
+          <WeekWrapper isAllDay={isAllDay} {...eventRowProps}>
             {levels.map((segs, idx) => (
               <EventRow key={idx} segments={segs} {...eventRowProps} />
             ))}

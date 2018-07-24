@@ -22,6 +22,7 @@ export function getSlotMetrics() {
 
       levels,
       extra,
+      range,
       slots: range.length,
 
       clone(args) {
@@ -33,9 +34,8 @@ export function getSlotMetrics() {
         return range[slotNumber]
       },
 
-      // REMOVE
-      getEventSegment(event, acc) {
-        return eventSegments(event, range, acc || accessors)
+      getSlotForDate(date) {
+        return range.find(r => dates.eq(r, date, 'day'))
       },
 
       getEventsForSlot(slot) {
