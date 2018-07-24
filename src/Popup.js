@@ -83,6 +83,7 @@ class Popup extends React.Component {
         {events.map((event, idx) => (
           <EventCell
             key={idx}
+            type="popup"
             event={event}
             getters={getters}
             onSelect={onSelect}

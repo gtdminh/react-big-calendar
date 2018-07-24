@@ -9,6 +9,7 @@ import Selection, {
 } from '../../Selection'
 import TimeGridEvent from '../../TimeGridEvent'
 import { dragAccessors } from './common'
+import NoopWrapper from '../../NoopWrapper'
 
 const pointerInColumn = (node, x, y) => {
   const { left, right, top } = getBoundsForNode(node)
@@ -25,11 +26,13 @@ class EventContainerWrapper extends React.Component {
     slotMetrics: PropTypes.object.isRequired,
     resource: PropTypes.any,
   }
+
   static contextTypes = {
     onEventDrop: PropTypes.func,
-    movingEvent: PropTypes.object,
+    dragAndDropAction: PropTypes.object,
     onMove: PropTypes.func,
   }
+
   constructor(...args) {
     super(...args)
     this.state = {}
@@ -43,68 +46,107 @@ class EventContainerWrapper extends React.Component {
     this._teardownSelectable()
   }
 
-  _selectable = () => {
-    let node = findDOMNode(this)
+  maybeReset(node, point) {
+    if (!pointerInColumn(node, point.x, point.y)) {
+      if (this.state.event) this.setState({ event: null })
+      return true
+    }
+  }
+
+  handleMove = ({ event }, point, node) => {
     const { slotMetrics } = this.props
 
+    if (this.maybeReset(node, point)) return
+
+    let currentSlot = slotMetrics.closestSlotFromPoint(
+      point,
+      getBoundsForNode(node)
+    )
+
+    let end = dates.add(
+      currentSlot,
+      dates.diff(event.start, event.end, 'minutes'),
+      'minutes'
+    )
+
+    const { startDate, endDate, ...state } = slotMetrics.getRange(
+      currentSlot,
+      end
+    )
+
+    this.setState({
+      event: {
+        ...event,
+        start: startDate,
+        end: endDate,
+      },
+      ...state,
+    })
+  }
+
+  handleResize({ event, direction }, point, node) {
+    let start, end
+    const { accessors, slotMetrics } = this.props
+
+    if (this.maybeReset(node, point)) return
+
+    let currentSlot = slotMetrics.closestSlotFromPoint(
+      point,
+      getBoundsForNode(node)
+    )
+    if (direction === 'UP') {
+      end = accessors.end(event)
+      start = dates.min(currentSlot, slotMetrics.closestSlotFromDate(end, -1))
+    } else if (direction === 'DOWN') {
+      start = accessors.start(event)
+      end = dates.max(currentSlot, slotMetrics.closestSlotFromDate(start))
+    }
+
+    const { startDate, endDate, ...state } = slotMetrics.getRange(start, end)
+
+    this.setState({
+      event: {
+        ...event,
+        start: startDate,
+        end: endDate,
+      },
+      ...state,
+    })
+  }
+
+  _selectable = () => {
+    let node = findDOMNode(this)
     let selector = (this._selector = new Selection(() =>
       node.closest('.rbc-time-view')
     ))
 
-    let selectionState = ({ y, x }) => {
-      const { movingEvent } = this.context
-      if (!movingEvent) return
+    let handler = box => {
+      const { dragAndDropAction } = this.context
 
-      if (!pointerInColumn(node, x, y)) {
-        if (this.state.selecting) this.setState({ selecting: false })
-        return
-      }
-
-      let { top, bottom } = getBoundsForNode(node)
-
-      let range = Math.abs(top - bottom)
-
-      let currentSlot = slotMetrics.closestSlotToPosition(
-        (y - top - this.eventOffsetTop) / range
-      )
-
-      let end = dates.add(
-        currentSlot,
-        dates.diff(movingEvent.start, movingEvent.end, 'minutes'),
-        'minutes'
-      )
-
-      const { startDate, endDate, ...state } = slotMetrics.getRange(
-        currentSlot,
-        end
-      )
-
-      return {
-        event: {
-          ...movingEvent,
-          start: startDate,
-          end: endDate,
-        },
-        ...state,
-        selecting: true,
+      switch (dragAndDropAction.action) {
+        case 'move':
+          this.handleMove(dragAndDropAction, box, node)
+          break
+        case 'resize':
+          this.handleResize(dragAndDropAction, box, node)
+          break
       }
     }
 
-    selector.on('selecting', box => {
-      this.setState(selectionState(box))
-    })
+    selector.on('selecting', handler)
 
     selector.on('selectStart', box => {
       const eventNode = getEventNodeFromPoint(node, box)
 
       if (!eventNode) return
       this.eventOffsetTop = box.y - getBoundsForNode(eventNode).top
+      this.eventOffsetBottom = box.y - getBoundsForNode(eventNode).bottom
 
-      this.setState(selectionState(box))
+      handler(box)
     })
 
     selector.on('select', () => {
-      if (this.state.selecting) {
+      if (this.state.event) {
         this.handleEventDrop(this.state.event)
       }
     })
@@ -115,16 +157,16 @@ class EventContainerWrapper extends React.Component {
 
   handleEventDrop = ({ start, end }) => {
     const { resource } = this.props
-    const { movingEvent, onMove, onEventDrop } = this.context
+    const { dragAndDropAction, onMove, onEventDrop } = this.context
 
-    this.setState({ selecting: false })
+    this.setState({ event: null })
 
     onMove(null)
 
     onEventDrop({
       end,
       start,
-      event: movingEvent,
+      event: dragAndDropAction.event,
       resourceId: resource,
     })
   }
@@ -145,17 +187,16 @@ class EventContainerWrapper extends React.Component {
       localizer,
     } = this.props
 
-    let { selecting, top, event, height } = this.state
-    const moving = this.context.movingEvent
+    let { event, top, height } = this.state
 
-    if (!moving || !selecting) return children
+    if (!event) return children
 
     const events = children.props.children
-
     const { start, end } = event
-    let format = 'eventTimeRangeFormat'
 
     let label
+    let format = 'eventTimeRangeFormat'
+
     const startsBeforeDay = slotMetrics.startsBeforeDay(start)
     const startsAfterDay = slotMetrics.startsAfterDay(end)
 
@@ -170,20 +211,19 @@ class EventContainerWrapper extends React.Component {
         <React.Fragment>
           {events}
 
-          {selecting &&
-            moving && (
-              <TimeGridEvent
-                event={event}
-                label={label}
-                className="rbc-addons-dnd-drag-preview"
-                style={{ top, height, width: 100 }}
-                eventComponent={components.event}
-                eventPropGetter={getters.eventProp}
-                accessors={{ ...accessors, ...dragAccessors }}
-                continuesEarlier={startsBeforeDay}
-                continuesLater={startsAfterDay}
-              />
-            )}
+          {event && (
+            <TimeGridEvent
+              event={event}
+              label={label}
+              className="rbc-addons-dnd-drag-preview"
+              style={{ top, height, width: 100 }}
+              getters={getters}
+              components={{ ...components, eventWrapper: NoopWrapper }}
+              accessors={{ ...accessors, ...dragAccessors }}
+              continuesEarlier={startsBeforeDay}
+              continuesLater={startsAfterDay}
+            />
+          )}
         </React.Fragment>
       ),
     })

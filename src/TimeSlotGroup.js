@@ -10,7 +10,7 @@ export default class TimeSlotGroup extends Component {
     group: PropTypes.array.isRequired,
     resource: PropTypes.any,
     components: PropTypes.object,
-    getters: PropTypes.object.isRequired,
+    getters: PropTypes.object,
   }
 
   render() {

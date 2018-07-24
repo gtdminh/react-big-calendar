@@ -28,13 +28,14 @@ export default {
   renderEvent(props, event) {
     let {
       selected,
-      isAllDay,
-      components,
+      isAllDay: _,
       accessors,
       getters,
       onSelect,
       onDoubleClick,
+      localizer,
       slotMetrics,
+      components,
     } = props
 
     let continuesPrior = slotMetrics.startsBefore(accessors.start(event))
@@ -44,6 +45,7 @@ export default {
       <EventCell
         event={event}
         getters={getters}
+        localizer={localizer}
         accessors={accessors}
         components={components}
         onSelect={onSelect}
@@ -51,7 +53,6 @@ export default {
         continuesPrior={continuesPrior}
         continuesAfter={continuesAfter}
         selected={isSelected(event, selected)}
-        isAllDay={isAllDay}
       />
     )
   },

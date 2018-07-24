@@ -37,7 +37,9 @@ class EventCell extends React.Component {
       continuesAfter,
       accessors,
       getters,
+      children,
       components: { event: Event, eventWrapper: EventWrapper },
+      ...props
     } = this.props
 
     let title = accessors.title(event)
@@ -51,18 +53,25 @@ class EventCell extends React.Component {
 
     let userProps = getters.eventProp(event, start, end, selected)
 
-    let wrapperProps = {
-      event,
-      isAllDay,
-      continuesPrior,
-      continuesAfter,
-    }
+    const content = (
+      <div className="rbc-event-content" title={tooltip || undefined}>
+        {Event ? (
+          <Event
+            event={event}
+            title={title}
+            isAllDay={allDay}
+            localizer={localizer}
+          />
+        ) : (
+          title
+        )}
+      </div>
+    )
 
     return (
-      // give EventWrapper some extra info to help it determine whether it
-      // it's in a row, etc. Useful for dnd, etc.
-      <EventWrapper type="date" {...wrapperProps}>
+      <EventWrapper {...this.props} type="date">
         <div
+          {...props}
           style={{ ...userProps.style, ...style }}
           className={cn('rbc-event', className, userProps.className, {
             'rbc-selected': selected,
@@ -73,18 +82,7 @@ class EventCell extends React.Component {
           onClick={e => onSelect && onSelect(event, e)}
           onDoubleClick={e => onDoubleClick && onDoubleClick(event, e)}
         >
-          <div className="rbc-event-content" title={tooltip || undefined}>
-            {Event ? (
-              <Event
-                event={event}
-                title={title}
-                isAllDay={allDay}
-                localizer={localizer}
-              />
-            ) : (
-              title
-            )}
-          </div>
+          {typeof children === 'function' ? children(content) : content}
         </div>
       </EventWrapper>
     )

@@ -6,18 +6,18 @@ import { accessor as get } from '../../utils/accessors'
 
 import BigCalendar from '../../index'
 
-class DraggableEventWrapper extends React.Component {
+class EventWrapper extends React.Component {
   static contextTypes = {
     components: PropTypes.object,
     draggableAccessor: accessor,
     resizableAccessor: accessor,
     onMove: PropTypes.func.isRequired,
-    movingEvent: PropTypes.object,
+    onResize: PropTypes.func.isRequired,
+    dragAndDropAction: PropTypes.object,
   }
 
   static propTypes = {
     event: PropTypes.object.isRequired,
-    slotMetrics: PropTypes.object.isRequired,
 
     draggable: PropTypes.bool,
     allDay: PropTypes.bool,
@@ -28,8 +28,40 @@ class DraggableEventWrapper extends React.Component {
     isResizing: PropTypes.bool,
   }
 
+  handleResizeUp = e => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    this.context.onResize(this.props.event, 'UP')
+  }
+  handleResizeDown = e => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    this.context.onResize(this.props.event, 'DOWN')
+  }
+  handleResizeLeft = e => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    this.context.onResize(this.props.event, 'LEFT')
+  }
+  handleResizeRight = e => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    this.context.onResize(this.props.event, 'RIGHT')
+  }
   handleStartDragging = e => {
     if (e.button === 0) this.context.onMove(this.props.event)
+  }
+
+  renderAnchor(direction) {
+    const cls = direction === 'Up' || direction === 'Down' ? 'ns' : 'ew'
+    return (
+      <div
+        className={`rbc-addons-dnd-resize-${cls}-anchor`}
+        onMouseDown={this[`handleResize${direction}`]}
+      >
+        <div className={`rbc-addons-dnd-resize-${cls}-icon`} />
+      </div>
+    )
   }
 
   render() {
@@ -87,23 +119,15 @@ class DraggableEventWrapper extends React.Component {
     let isResizable = resizableAccessor ? !!get(event, resizableAccessor) : true
 
     if (isResizable) {
-      if (type === 'date' || allDay) {
-        const anchor = (
-          <div className="rbc-addons-dnd-resize-ew-anchor">
-            <div className="rbc-addons-dnd-resize-ew-icon" />
-          </div>
-        )
-        StartAnchor = !continuesPrior && anchor
-        EndAnchor = !continuesAfter && anchor
+      if (type === 'date') {
+        StartAnchor = !continuesPrior && this.renderAnchor('Left')
+        EndAnchor = !continuesAfter && this.renderAnchor('Right')
       } else {
-        const anchor = (
-          <div className="rbc-addons-dnd-resize-ns-anchor">
-            <div className="rbc-addons-dnd-resize-ns-icon" />
-          </div>
-        )
-        StartAnchor = !continuesPrior && anchor
-        EndAnchor = !continuesAfter && anchor
+        StartAnchor = !continuesPrior && this.renderAnchor('Up')
+        EndAnchor = !continuesAfter && this.renderAnchor('Down')
       }
+
+      const isDragging = this.context.dragAndDropAction.event === event
 
       /*
       * props.children is the singular <Event> component.
@@ -113,16 +137,6 @@ class DraggableEventWrapper extends React.Component {
       * rather than wrap the Event here as the latter approach
       * would lose the positioning.
       */
-      const childrenWithAnchors = (
-        <div className="rbc-addons-dnd-resizable">
-          {StartAnchor}
-          {children.props.children}
-          {EndAnchor}
-        </div>
-      )
-
-      const isDragging = this.context.movingEvent === event
-
       children = React.cloneElement(children, {
         onMouseDown: this.handleStartDragging,
         onTouchStart: this.handleStartDragging,
@@ -131,7 +145,14 @@ class DraggableEventWrapper extends React.Component {
           isDragging && 'rbc-addons-dnd-dragging',
           isResizing && 'rbc-addons-dnd-resizing'
         ),
-        children: childrenWithAnchors, // replace original event child with anchor-embellished child
+        // replace original event child with anchor-embellished child
+        children: (
+          <div className="rbc-addons-dnd-resizable">
+            {StartAnchor}
+            {children.props.children}
+            {EndAnchor}
+          </div>
+        ),
       })
     }
 
@@ -143,4 +164,4 @@ class DraggableEventWrapper extends React.Component {
   }
 }
 
-export default DraggableEventWrapper
+export default EventWrapper

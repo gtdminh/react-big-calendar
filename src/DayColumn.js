@@ -148,7 +148,7 @@ class DayColumn extends React.Component {
       accessors,
       localizer,
       getters,
-      components: { eventWrapper: EventWrapper, event: Event },
+      components,
     } = this.props
 
     const { slotMetrics } = this
@@ -179,33 +179,22 @@ class DayColumn extends React.Component {
       let continuesLater = startsAfterDay || slotMetrics.startsAfter(end)
 
       return (
-        <EventWrapper
-          type="time"
+        <TimeGridEvent
+          style={style}
           event={event}
-          localizer={localizer}
-          slotMetrics={slotMetrics}
+          label={label}
+          key={'evt_' + idx}
           getters={getters}
-          accessors={accessors}
+          isRtl={isRtl}
+          getters={getters}
+          components={components}
           continuesEarlier={continuesEarlier}
           continuesLater={continuesLater}
-        >
-          <TimeGridEvent
-            style={style}
-            event={event}
-            label={label}
-            key={'evt_' + idx}
-            getters={getters}
-            isRtl={isRtl}
-            eventComponent={Event}
-            eventPropGetter={getters.eventProp}
-            continuesEarlier={continuesEarlier}
-            continuesLater={continuesLater}
-            accessors={accessors}
-            selected={isSelected(event, selected)}
-            onClick={e => this._select(event, e)}
-            onDoubleClick={e => this._doubleClick(event, e)}
-          />
-        </EventWrapper>
+          accessors={accessors}
+          selected={isSelected(event, selected)}
+          onClick={e => this._select(event, e)}
+          onDoubleClick={e => this._doubleClick(event, e)}
+        />
       )
     })
   }
@@ -240,12 +229,10 @@ class DayColumn extends React.Component {
       }
     }
 
-    let selectionState = ({ y }) => {
-      let { top, bottom } = getBoundsForNode(node)
-
-      let range = Math.abs(top - bottom)
-      let currentSlot = this.slotMetrics.closestSlotToPosition(
-        (y - top) / range
+    let selectionState = point => {
+      let currentSlot = this.slotMetrics.closestSlotFromPoint(
+        point,
+        getBoundsForNode(node)
       )
 
       if (!this.state.selecting) this._initialSlot = currentSlot

@@ -82,10 +82,10 @@ export default function withDragAndDrop(Calendar) {
       onEventDrop: PropTypes.func,
       onEventResize: PropTypes.func,
       onMove: PropTypes.func,
-      movingEvent: PropTypes.object,
+      onResize: PropTypes.func,
+      dragAndDropAction: PropTypes.object,
+
       components: PropTypes.object,
-      startAccessor: accessor,
-      endAccessor: accessor,
       draggableAccessor: accessor,
       resizableAccessor: accessor,
       step: PropTypes.number,
@@ -95,46 +95,33 @@ export default function withDragAndDrop(Calendar) {
       return {
         onEventDrop: this.props.onEventDrop,
         onEventResize: this.props.onEventResize,
-        components: this.props.components,
-        startAccessor: this.props.startAccessor,
-        endAccessor: this.props.endAccessor,
         step: this.props.step,
+        components: this.props.components,
         draggableAccessor: this.props.draggableAccessor,
         resizableAccessor: this.props.resizableAccessor,
-        onMove: movingEvent => this.setState({ movingEvent }),
-        movingEvent: this.state.movingEvent || null,
+
+        onResize: (event, direction) =>
+          this.setState({
+            dragAndDropAction: { action: 'resize', event, direction },
+          }),
+
+        onMove: event =>
+          this.setState({
+            dragAndDropAction: event ? { action: 'move', event } : {},
+          }),
+
+        dragAndDropAction: this.state.dragAndDropAction,
       }
     }
 
     constructor(...args) {
       super(...args)
-      this.state = { isDragging: false }
+      this.state = { isDragging: false, dragAndDropAction: {} }
     }
-
-    // componentWillMount() {
-    //   let monitor = this.context.dragDropManager.getMonitor()
-    //   this.monitor = monitor
-    //   this.unsubscribeToStateChange = monitor.subscribeToStateChange(
-    //     this.handleStateChange
-    //   )
-    // }
-
-    // componentWillUnmount() {
-    //   this.monitor = null
-    //   this.unsubscribeToStateChange()
-    // }
-
-    // handleStateChange = () => {
-    //   const isDragging = !!this.monitor.getItem()
-
-    //   if (isDragging !== this.state.isDragging) {
-    //     setTimeout(() => this.setState({ isDragging }))
-    //   }
-    // }
 
     render() {
       const { selectable, components, ...props } = this.props
-
+      const { dragAndDropAction } = this.state
       delete props.onEventDrop
       delete props.onEventResize
 
@@ -143,7 +130,7 @@ export default function withDragAndDrop(Calendar) {
       props.className = cn(
         props.className,
         'rbc-addons-dnd',
-        !!this.state.movingEvent && 'rbc-addons-dnd-is-dragging'
+        dragAndDropAction.action === 'move' && 'rbc-addons-dnd-is-dragging'
       )
 
       props.components = {
